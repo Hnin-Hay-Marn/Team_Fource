@@ -1,3 +1,7 @@
+<?php 
+
+
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,16 +10,17 @@
 
 <!-- Link CSS -->
 <link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/dashboard.css">
 </head>
 
 <body>
 <div class="layout">
   <aside class="sidebar">
     <h2><span class="logo-icon">💸</span> FOURCE</h2>
-    <a href="dashboard.html">Dashboard</a>
-    <a href="goals.html">貯金目標</a>
-    <a href="analytics.html">分析</a>
-    <a href="achievements.html">達成バッジ</a>
+    <a href="dashboard.php">Dashboard</a>
+    <a href="goals.php">貯金目標</a>
+    <a href="analytics.php">分析</a>
+    <a href="achievements.php">達成バッジ</a>
   </aside>
 <div class="main">
 
@@ -24,7 +29,7 @@
     <h2>Hello, Ruby 👋</h2>
 
     <div class="top-actions">
-      <button onclick="goPage('profile.html')">👤 Profile</button>
+      <button onclick="goPage('profile.php')">👤 Profile</button>
     </div>
   </div>
 
@@ -50,7 +55,7 @@
   <div class="card budget">
     <h3>Budget Overview</h3>
 
-    <div class="budget-card" onclick="goPage('basic.html')">
+    <div class="budget-card" onclick="goPage('basic.php')">
       <div class="budget-top">
         <span>🏠 Basic Cost</span>
         <span>¥60,000 / ¥100,000</span>
@@ -58,7 +63,7 @@
       <div class="bar"><div class="fill green"></div></div>
     </div>
 
-    <div class="budget-card" onclick="goPage('fun.html')">
+    <div class="budget-card" onclick="goPage('fun.php')">
       <div class="budget-top">
         <span>🎮 Entertainment</span>
         <span>¥20,000 / ¥50,000</span>
@@ -66,7 +71,7 @@
       <div class="bar"><div class="fill pink"></div></div>
     </div>
 
-    <div class="budget-card" onclick="goPage('emergency.html')">
+    <div class="budget-card" onclick="goPage('emergency.php')">
       <div class="budget-top">
         <span>⚠️ Emergency</span>
         <span>¥15,000 / ¥50,000</span>

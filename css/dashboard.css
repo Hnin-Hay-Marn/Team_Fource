@@ -1,0 +1,109 @@
+
+/*dashboard*/
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", sans-serif;
+  background: #eef2f7;
+}
+
+/* Main layout */
+.main {
+  padding: 30px;
+}
+
+/* Header */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.top-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.top-actions button {
+  background: white;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.08);
+  transition: 0.2s;
+}
+
+.top-actions button:hover {
+  background: #22c55e;
+  color: white;
+}
+
+/* Cards */
+.card {
+  background: white;
+  padding: 20px;
+  border-radius: 15px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+}
+
+/* Top cards */
+.top {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 25px;
+}
+
+.income {
+  font-size: 26px;
+  color: #22c55e;
+  font-weight: bold;
+}
+
+.streak {
+  font-size: 22px;
+  font-weight: bold;
+}
+
+/* Budget */
+.budget h3 {
+  margin-bottom: 15px;
+}
+
+.budget-card {
+  padding: 15px;
+  border-radius: 12px;
+  margin-bottom: 15px;
+  background: #f9fafc;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.budget-card:hover {
+  transform: translateY(-3px);
+  background: #f0fdf4;
+}
+
+.budget-top {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+/* Progress bar */
+.bar {
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.fill {
+  height: 100%;
+}
+
+.green { width: 60%; background: #22c55e; }
+.pink { width: 40%; background: #f916a2; }
+.red { width: 30%; background: #fd370f; }

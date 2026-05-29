@@ -1,3 +1,8 @@
+<?php
+
+
+
+?>
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -11,10 +16,10 @@
 <div class="layout">
   <aside class="sidebar">
     <h2><span class="logo-icon">💸</span> FOURCE</h2>
-    <a href="dashboard.html">Dashboard</a>
-    <a href="goals.html">貯金目標</a>
-    <a href="analytics.html">分析</a>
-    <a href="achievements.html">達成バッジ</a>
+    <a href="dashboard.php">Dashboard</a>
+    <a href="goals.php">貯金目標</a>
+    <a href="analytics.php">分析</a>
+    <a href="achievements.php">達成バッジ</a>
   </aside>
 
   <main class="main">
