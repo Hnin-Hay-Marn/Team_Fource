@@ -1,0 +1,80 @@
+/* ACHIEVEMENT PAGE */
+.legend {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+
+.legend span {
+  background: white;
+  padding: 10px 16px;
+  border-radius: 20px;
+  box-shadow: 0 6px 15px rgba(0,0,0,0.07);
+  font-size: 14px;
+}
+
+.achievement-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 22px;
+  margin-top: 30px;
+}
+
+.month-card {
+  background: white;
+  border-radius: 24px;
+  padding: 26px;
+  text-align: center;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+  transition: 0.2s;
+}
+
+.month-card:hover {
+  transform: translateY(-5px);
+}
+
+.month {
+  font-weight: bold;
+  color: #2e7d60;
+  margin-bottom: 15px;
+}
+
+.icon {
+  font-size: 52px;
+  margin-bottom: 12px;
+}
+
+.gold {
+  border: 3px solid #f6c343;
+  background: #fff9e6;
+}
+
+.silver {
+  border: 3px solid #bfc7d5;
+  background: #f8f9fb;
+}
+
+.failed {
+  border: 3px solid #ff6b6b;
+  background: #fff0f0;
+}
+
+.current {
+  border: 3px solid #ff9800;
+  background: #fff7e8;
+}
+
+.locked {
+  opacity: 0.45;
+}
+
+@media (max-width: 900px) {
+  .achievement-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.logo-icon {
+  margin-right: 8px;
+}
