@@ -37,7 +37,7 @@
   <div class="top">
     <div class="card">
       <p>Monthly Income</p>
-      <div class="income">¥200,000</div>
+      <div id="monthly-income" class="income" title="Click to edit">¥200,000</div>
     </div>
 
     <div class="card">
@@ -91,6 +91,33 @@ function goPage(page){
 function like(){
   alert("❤️ You liked your savings progress!");
 }
+// Monthly income: load/save and allow inline editing (stored in localStorage)
+document.addEventListener('DOMContentLoaded', function(){
+  var el = document.getElementById('monthly-income');
+  if(!el) return;
+
+  function formatYen(n){
+    return '¥' + Number(n).toLocaleString();
+  }
+
+  // Load saved value
+  var saved = localStorage.getItem('monthlyIncome');
+  if(saved && saved.match(/^\d+$/)){
+    el.textContent = formatYen(saved);
+  }
+
+  // Click to edit
+  el.style.cursor = 'pointer';
+  el.addEventListener('click', function(){
+    var current = localStorage.getItem('monthlyIncome') || el.textContent.replace(/[^0-9]/g,'');
+    var input = prompt('Enter monthly income (numbers only):', current);
+    if(input === null) return; // cancelled
+    var digits = input.replace(/[^0-9]/g,'');
+    if(digits === ''){ alert('Please enter a valid number'); return; }
+    localStorage.setItem('monthlyIncome', digits);
+    el.textContent = formatYen(digits);
+  });
+});
 </script>
 </div>
 </body>
