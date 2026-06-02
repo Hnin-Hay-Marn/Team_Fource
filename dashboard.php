@@ -18,9 +18,9 @@
   <aside class="sidebar">
     <h2><span class="logo-icon">💸</span> FOURCE</h2>
     <a href="dashboard.php">Dashboard</a>
-    <a href="goals.php">貯金目標</a>
-    <a href="analytics.php">分析</a>
-    <a href="achievements.php">達成バッジ</a>
+    <a href="goals.php">Savings Goals</a>
+    <a href="analytics.php">Analytics</a>
+    <a href="achievements.php">Achievements</a>
   </aside>
 <div class="main">
 
@@ -35,9 +35,9 @@
 
   <!-- Top Cards -->
   <div class="top">
-    <div class="card">
+    <div class="card" onclick="goPage('monthly_income.php')" style="cursor:pointer;">
       <p>Monthly Income</p>
-      <div id="monthly-income" class="income" title="Click to edit">¥200,000</div>
+      <div id="monthly-income" class="income" title="Click to open monthly income page">¥200,000</div>
     </div>
 
     <div class="card">
@@ -106,16 +106,9 @@ document.addEventListener('DOMContentLoaded', function(){
     el.textContent = formatYen(saved);
   }
 
-  // Click to edit
   el.style.cursor = 'pointer';
   el.addEventListener('click', function(){
-    var current = localStorage.getItem('monthlyIncome') || el.textContent.replace(/[^0-9]/g,'');
-    var input = prompt('Enter monthly income (numbers only):', current);
-    if(input === null) return; // cancelled
-    var digits = input.replace(/[^0-9]/g,'');
-    if(digits === ''){ alert('Please enter a valid number'); return; }
-    localStorage.setItem('monthlyIncome', digits);
-    el.textContent = formatYen(digits);
+    goPage('monthly_income.php');
   });
 });
 </script>
