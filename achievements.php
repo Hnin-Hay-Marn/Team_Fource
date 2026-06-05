@@ -17,21 +17,23 @@
   <aside class="sidebar">
     <h2><span class="logo-icon">💸</span> FOURCE</h2>
     <a href="dashboard.php">Dashboard</a>
-    <a href="goals.php">貯金目標</a>
-    <a href="analytics.php">分析</a>
-    <a href="achievements.php">達成バッジ</a>
+    <a href="goals.php">Savings Goals</a>
+    <a href="analytics.php">Analysis</a>
+    <a href="achievements.php">Achievements</a>
   </aside>
 
   <main class="main">
-    <h1>年間達成ボード</h1>
-    <p class="subtitle">毎月の貯金結果をバッジで記録します。</p>
+    
+    <h1>Yearly Achievement Board</h1>
+    <?php include 'includes/topbar.php'; ?>
+    <p class="subtitle">Record your monthly savings results with badges.</p>
 
     <div class="legend">
-      <span>🥇 目標超え</span>
-      <span>🥈 目標達成</span>
-      <span>❌ 未達成</span>
-      <span>🔥 挑戦中</span>
-      <span>🔒 これから</span>
+      <span>🥇 Goal Exceeded</span>
+      <span>🥈 Goal Achieved</span>
+      <span>❌ Goal Not Achieved</span>
+      <span>🔥 In Progress</span>
+      <span>🔒 To Be Unlocked</span>
     </div>
 
     <div class="achievement-grid">
@@ -39,73 +41,73 @@
       <div class="month-card gold">
         <div class="month">January</div>
         <div class="icon">🥇</div>
-        <p>目標超え</p>
+        <p>Goal Exceeded</p>
       </div>
 
       <div class="month-card silver">
         <div class="month">February</div>
         <div class="icon">🥈</div>
-        <p>目標達成</p>
+        <p>Goal Achieved</p>
       </div>
 
       <div class="month-card failed">
         <div class="month">March</div>
         <div class="icon">❌</div>
-        <p>未達成</p>
+        <p>Goal Not Achieved</p>
       </div>
 
       <div class="month-card gold">
         <div class="month">April</div>
         <div class="icon">🥇</div>
-        <p>目標超え</p>
+        <p>Goal Exceeded</p>
       </div>
 
       <div class="month-card current">
         <div class="month">May</div>
         <div class="icon">🔥</div>
-        <p>挑戦中</p>
+        <p>In Progress</p>
       </div>
 
       <div class="month-card locked">
         <div class="month">June</div>
         <div class="icon">🔒</div>
-        <p>これから</p>
+        <p>To Be Unlocked</p>
       </div>
 
       <div class="month-card locked">
         <div class="month">July</div>
         <div class="icon">🔒</div>
-        <p>これから</p>
+        <p>To Be Unlocked</p>
       </div>
 
       <div class="month-card locked">
         <div class="month">August</div>
         <div class="icon">🔒</div>
-        <p>これから</p>
+        <p>To Be Unlocked</p>
       </div>
 
       <div class="month-card locked">
         <div class="month">September</div>
         <div class="icon">🔒</div>
-        <p>これから</p>
+        <p>To Be Unlocked</p>
       </div>
 
       <div class="month-card locked">
         <div class="month">October</div>
         <div class="icon">🔒</div>
-        <p>これから</p>
+        <p>To Be Unlocked</p>
       </div>
 
       <div class="month-card locked">
         <div class="month">November</div>
         <div class="icon">🔒</div>
-        <p>これから</p>
+        <p>To Be Unlocked</p>
       </div>
 
       <div class="month-card locked">
         <div class="month">December</div>
         <div class="icon">🔒</div>
-        <p>これから</p>
+        <p>To Be Unlocked</p>
       </div>
 
     </div>

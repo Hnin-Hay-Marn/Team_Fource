@@ -1,0 +1,176 @@
+.goals-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 25px;
+  margin-top: 30px;
+}
+
+/* Empty Goal Slot */
+.empty-goal {
+  background: white;
+  border: 3px dashed #43b883;
+  border-radius: 25px;
+  min-height: 350px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: 0.3s;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+}
+
+.empty-goal:hover {
+  transform: translateY(-5px);
+  background: #f0fff8;
+}
+
+.plus {
+  font-size: 70px;
+  font-weight: bold;
+  color: #43b883;
+}
+
+.empty-goal h3 {
+  margin-top: 15px;
+  color: #2e7d60;
+}
+
+.empty-goal p {
+  margin-top: 8px;
+  color: #607d8b;
+}
+
+/* Saved Goal Card */
+.goal-card {
+  background: white;
+  border-radius: 26px;
+  padding: 22px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+}
+
+.goal-card img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 20px;
+  margin-bottom: 18px;
+}
+
+.goal-card h2 {
+  color: #2e7d60;
+  margin-bottom: 10px;
+}
+
+.amount {
+  font-weight: bold;
+  margin-bottom: 12px;
+}
+
+.percent {
+  color: #607d8b;
+  font-size: 14px;
+  margin-top: 8px;
+}
+
+/* Progress Bar */
+.progress {
+  width: 100%;
+  height: 15px;
+  background: #e0e0e0;
+  border-radius: 20px;
+  overflow: hidden;
+  margin-top: 10px;
+}
+
+.progress-bar {
+  height: 100%;
+  background: #43b883;
+  border-radius: 20px;
+}
+
+/* Edit Button */
+.edit-btn {
+  margin-top: 15px;
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 15px;
+  background: #2e7d60;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.edit-btn:hover {
+  background: #22664d;
+}
+
+/* Popup Background */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 999;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  justify-content: center;
+  align-items: center;
+}
+
+/* Popup Box */
+.modal-content {
+  background: white;
+  width: 600px;
+  max-width: 90%;
+  padding: 35px;
+  border-radius: 25px;
+  box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+}
+
+.close-btn {
+  float: right;
+  font-size: 32px;
+  cursor: pointer;
+  color: #333;
+}
+
+.modal-content h2 {
+  color: #2e7d60;
+  margin-bottom: 20px;
+}
+
+.modal-content label {
+  display: block;
+  margin-top: 15px;
+  margin-bottom: 8px;
+  font-weight: bold;
+}
+
+.modal-content input {
+  width: 100%;
+  padding: 13px;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+}
+
+.modal-content button {
+  width: 100%;
+  margin-top: 22px;
+  padding: 14px;
+  border: none;
+  border-radius: 15px;
+  background: #2e7d60;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.modal-content button:hover {
+  background: #22664d;
+}
+
+@media (max-width: 900px) {
+  .goals-grid {
+    grid-template-columns: 1fr;
+  }
+}

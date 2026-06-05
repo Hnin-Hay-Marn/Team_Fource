@@ -1,0 +1,58 @@
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 25px;  
+  }
+
+.top-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: flex-end;
+  margin-bottom: 24px;
+}
+
+.google-translate {
+  min-width: 180px;
+}
+
+.top-actions button,
+.top-actions .goog-te-gadget-simple {
+  background: white;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.08);
+  transition: background 0.2s ease, color 0.2s ease;
+  min-height: 42px;
+}
+
+.top-actions button:hover,
+.top-actions .goog-te-gadget-simple:hover {
+  background: #22c55e;
+  color: white;
+}
+
+.top-actions .goog-te-gadget-simple:hover .goog-te-combo {
+  color: white !important;
+}
+
+.top-actions .goog-te-combo {
+  min-width: 160px;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 8px !important;
+  color: #0f172a !important;
+  box-shadow: none !important;
+}
+
+.top-actions .goog-te-gadget-icon {
+  display: none !important;
+}
+
+.topbar-button {
+  white-space: nowrap;
+}
