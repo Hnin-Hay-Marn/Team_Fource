@@ -17,47 +17,48 @@
 <div class="layout">
   <aside class="sidebar">
     <h2><span class="logo-icon">💸</span> FOURCE</h2>
-    <a href="dashboard.php">Dashboard</a>
-    <a href="goals.php">Savings Goals</a>
-    <a href="analytics.php">Analytics</a>
-    <a href="achievements.php">Achievements</a>
+    <a id="navDashboard" href="dashboard.php">Dashboard</a>
+    <a id="navGoals" href="goals.php">Savings Goals</a>
+    <a id="navAnalytics" href="analytics.php">Analytics</a>
+    <a id="navAchievements" href="achievements.php">Achievements</a>
   </aside>
 <div class="main">
 
   <!-- Header -->
   <div class="header">
-    <h2>Hello, Ruby 👋</h2>
+    <h2 id="greeting">Hello, Ruby 👋</h2>
 
     <div class="top-actions">
-      <button onclick="goPage('profile.php')">👤 Profile</button>
+      <div id="google_translate_element" class="google-translate"></div>
+      <button id="profileBtn" onclick="goPage('profile.php')">👤 Profile</button>
     </div>
   </div>
 
   <!-- Top Cards -->
   <div class="top">
     <div class="card" onclick="goPage('monthly_income.php')" style="cursor:pointer;">
-      <p>Monthly Income</p>
+      <p id="incomeCardTitle">Monthly Income</p>
       <div id="monthly-income" class="income" title="Click to open monthly income page">¥200,000</div>
     </div>
 
     <div class="card">
-      <p>Savings</p>
+      <p id="savingsCardTitle">Savings</p>
       <div class="income">¥50,000</div>
     </div>
 
     <div class="card">
-      <p>Daily Streak</p>
+      <p id="streakCardTitle">Daily Streak</p>
       <div class="streak">12 Days 🔥</div>
     </div>
   </div>
 
   <!-- Budget Overview -->
   <div class="card budget">
-    <h3>Budget Overview</h3>
+    <h3 id="budgetHeading">Budget Overview</h3>
 
     <div class="budget-card" onclick="goPage('basic.php')">
       <div class="budget-top">
-        <span>🏠 Basic Cost</span>
+        <span id="basicCostLabel">🏠 Basic Cost</span>
         <span>¥60,000 / ¥100,000</span>
       </div>
       <div class="bar"><div class="fill green"></div></div>
@@ -65,7 +66,7 @@
 
     <div class="budget-card" onclick="goPage('fun.php')">
       <div class="budget-top">
-        <span>🎮 Entertainment</span>
+        <span id="entertainmentLabel">🎮 Entertainment</span>
         <span>¥20,000 / ¥50,000</span>
       </div>
       <div class="bar"><div class="fill pink"></div></div>
@@ -73,7 +74,7 @@
 
     <div class="budget-card" onclick="goPage('emergency.php')">
       <div class="budget-top">
-        <span>⚠️ Emergency</span>
+        <span id="emergencyLabel">⚠️ Emergency</span>
         <span>¥15,000 / ¥50,000</span>
       </div>
       <div class="bar"><div class="fill red"></div></div>
@@ -88,19 +89,22 @@ function goPage(page){
   window.location.href = page;
 }
 
-function like(){
-  alert("❤️ You liked your savings progress!");
+function formatYen(n){
+  return '¥' + Number(n).toLocaleString();
 }
-// Monthly income: load/save and allow inline editing (stored in localStorage)
+
+function googleTranslateElementInit() {
+  new google.translate.TranslateElement({
+    pageLanguage: 'en',
+    includedLanguages: 'en,ja,my,ko,zh-CN,th,vi,id,ne',
+    layout: google.translate.TranslateElement.InlineLayout.SIMPLE
+  }, 'google_translate_element');
+}
+
 document.addEventListener('DOMContentLoaded', function(){
   var el = document.getElementById('monthly-income');
   if(!el) return;
 
-  function formatYen(n){
-    return '¥' + Number(n).toLocaleString();
-  }
-
-  // Load saved value
   var saved = localStorage.getItem('monthlyIncome');
   if(saved && saved.match(/^\d+$/)){
     el.textContent = formatYen(saved);
@@ -112,6 +116,7 @@ document.addEventListener('DOMContentLoaded', function(){
   });
 });
 </script>
+<script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 </div>
 </body>
 </html>

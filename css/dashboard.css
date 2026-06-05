@@ -23,6 +23,11 @@ body {
 .top-actions {
   display: flex;
   gap: 10px;
+  align-items: center;
+}
+
+.google-translate {
+  min-width: 180px;
 }
 
 .top-actions button {
@@ -38,6 +43,17 @@ body {
 .top-actions button:hover {
   background: #22c55e;
   color: white;
+}
+
+.language-button {
+  background: #f5f7fb;
+  color: #0f172a;
+  border: 1px solid #d1d5db;
+}
+
+.language-button:hover {
+  background: #d1fae5;
+  color: #14532d;
 }
 
 /* Cards */

@@ -14,35 +14,36 @@
 <div class="layout">
   <aside class="sidebar">
     <h2><span class="logo-icon">💸</span> FOURCE</h2>
-    <a href="dashboard.php">Dashboard</a>
-    <a href="goals.php">Savings Goals</a>
-    <a href="analytics.php">Analytics</a>
-    <a href="achievements.php">Achievements</a>
+    <a id="navDashboard" href="dashboard.php">Dashboard</a>
+    <a id="navGoals" href="goals.php">Savings Goals</a>
+    <a id="navAnalytics" href="analytics.php">Analytics</a>
+    <a id="navAchievements" href="achievements.php">Achievements</a>
   </aside>
 <div class="main">
 
   <div class="header">
     <div>
-      <h2>Monthly Income</h2>
-      <p class="subtitle">Record your income and see the last 12 months in a chart.</p>
+      <h2 id="pageHeading">Monthly Income</h2>
+      <p id="pageSubtitle" class="subtitle">Record your income and see the last 12 months in a chart.</p>
     </div>
     <div class="top-actions">
-      <button onclick="goPage('dashboard.php')">← Back to Dashboard</button>
+      <div id="google_translate_element" class="google-translate"></div>
+      <button id="backButton" onclick="goPage('dashboard.php')">← Back to Dashboard</button>
     </div>
   </div>
 
   <div class="card monthly-income-panel">
     <div class="panel-left">
-      <p class="panel-label">Monthly Income</p>
+      <p id="panelLabel" class="panel-label">Monthly Income</p>
       <h1 id="currentIncome" class="hero-income">¥0</h1>
-      <p class="panel-note">Enter your latest monthly income and track the last 12 months of progress in the chart below.</p>
+      <p id="panelNote" class="panel-note">Enter your latest monthly income and track the last 12 months of progress in the chart below.</p>
     </div>
     <div class="panel-right">
       <div class="income-input-card">
-        <h3>Update income</h3>
-        <p class="subtitle">Enter your salary or earnings for this month.</p>
+        <h3 id="updateHeading">Update income</h3>
+        <p id="updateSubtitle" class="subtitle">Enter your salary or earnings for this month.</p>
         <div class="income-input-row">
-          <label for="incomeValue">Amount</label>
+          <label id="amountLabel" for="incomeValue">Amount</label>
           <input id="incomeValue" type="text" placeholder="200000" />
         </div>
         <button id="saveIncome" class="primary-button">Save income</button>
@@ -53,8 +54,8 @@
   <div class="card chart-card">
     <div class="chart-header">
       <div>
-        <h3>Income Trend</h3>
-        <p class="subtitle">Last 12 months</p>
+        <h3 id="chartHeading">Income Trend</h3>
+        <p id="chartSubtitleText" class="subtitle">Last 12 months</p>
       </div>
       <span id="chartSubtitle">Updated instantly</span>
     </div>
@@ -71,6 +72,14 @@ function goPage(page){
 
 function formatYen(value){
   return '¥' + Number(value).toLocaleString();
+}
+
+function googleTranslateElementInit() {
+  new google.translate.TranslateElement({
+    pageLanguage: 'en',
+    includedLanguages: 'en,ja,my,ko,zh-CN,th,vi,id,ne',
+    layout: google.translate.TranslateElement.InlineLayout.SIMPLE
+  }, 'google_translate_element');
 }
 
 function getHistory(){
@@ -224,5 +233,6 @@ window.addEventListener('DOMContentLoaded', function(){
   });
 });
 </script>
+<script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 </body>
 </html>
