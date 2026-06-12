@@ -77,6 +77,25 @@ body {
   font-weight: bold;
 }
 
+.total_spending {
+  font-size: 26px;
+  color: #e74c3c !important;
+  font-weight: bold;
+}
+ 
+.monthly_savings{
+  font-size: 26px;
+  color: #f5b041 !important;
+  font-weight: bold;
+}
+ 
+.total_savings {
+  font-size: 26px;
+  color: #43b883 !important;
+  font-weight: bold;
+}
+ 
+
 .streak {
   font-size: 22px;
   font-weight: bold;

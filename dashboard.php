@@ -42,9 +42,24 @@
     </div>
 
     <div class="card">
+        <p>Total Spending</p>
+        <div class ="total_spending">¥95,000</div>
+      </div>
+ 
+      <div class="card">
+        <p>Monthly Savings</p>
+        <div class="monthly_savings">¥50,000</div>
+      </div>
+ 
+      <div class="card">
+        <p>Total Savings</p>
+        <div class="total_savings">¥5,909,890</div>
+      </div>
+
+    <!-- <div class="card">
       <p id="savingsCardTitle">Savings</p>
       <div class="income">¥50,000</div>
-    </div>
+    </div> -->
 
     <div class="card">
       <p id="streakCardTitle">Daily Streak</p>
