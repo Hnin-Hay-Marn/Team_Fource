@@ -93,7 +93,10 @@ function getCategoryLabel(array $categories, string $id): string {
         <p class="subtitle">Your essential monthly expenses</p>
       </div>
       <div><?php include 'includes/topbar.php'; ?></div>
-      <button class="btn-add" onclick="openModal()">＋ Add Expense</button>
+      <div style="display: flex; gap: 10px;">
+        <button class="btn-add" onclick="openBudgetModal()">⚙️ Monthly Budget</button>
+        <button class="btn-add" onclick="openModal()">＋ Add Expense</button>
+      </div>
     </div>
  
     <!-- ── Category grid ────────────────────────────────────────────────── -->
@@ -191,6 +194,25 @@ function getCategoryLabel(array $categories, string $id): string {
  
  
 <!-- ══════════════════════════════════════════════════════════════════════════
+     MONTHLY BUDGET MODAL
+══════════════════════════════════════════════════════════════════════════ -->
+<div id="budget-overlay" class="modal-overlay">
+  <div class="modal" id="budget-modal" onclick="event.stopPropagation()">
+    <h2>Set Monthly Budget</h2>
+    <p style="color: #666; margin-bottom: 20px;">Define your total monthly budget for basic costs</p>
+    
+    <label>Monthly Budget (¥)
+      <input type="number" id="budget-input" placeholder="100000" min="1" step="1000" required>
+    </label>
+    
+    <div class="modal-actions">
+      <button type="button" class="btn-cancel" onclick="closeBudgetModal()">Cancel</button>
+      <button type="button" class="btn-save" onclick="saveBudget()">Save Budget</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
      DELETE CONFIRM MODAL
 ══════════════════════════════════════════════════════════════════════════ -->
 <div id="del-overlay" class="modal-overlay">
@@ -214,12 +236,18 @@ function getCategoryLabel(array $categories, string $id): string {
 ══════════════════════════════════════════════════════════════════════════ -->
 <script>
 // ── Grab overlays ─────────────────────────────────────────────────────────────
-var overlay    = document.getElementById('modal-overlay');
-var delOverlay = document.getElementById('del-overlay');
+var overlay      = document.getElementById('modal-overlay');
+var budgetOverlay = document.getElementById('budget-overlay');
+var delOverlay   = document.getElementById('del-overlay');
  
 // Close add/edit modal when clicking the dark backdrop
 overlay.addEventListener('click', function(e) {
   if (e.target === overlay) closeAddModal();
+});
+
+// Close budget modal when clicking the dark backdrop
+budgetOverlay.addEventListener('click', function(e) {
+  if (e.target === budgetOverlay) closeBudgetModal();
 });
  
 // Close delete modal when clicking the dark backdrop
@@ -264,7 +292,27 @@ function confirmDelete(id) {
 function closeDelModal() {
   delOverlay.style.display = 'none';
 }
- 
+ // ── Budget modal ─────────────────────────────────────────────────────────────
+function openBudgetModal() {
+  const saved = localStorage.getItem('monthlyBudget');
+  document.getElementById('budget-input').value = saved || '100000';
+  budgetOverlay.style.display = 'flex';
+}
+
+function closeBudgetModal() {
+  budgetOverlay.style.display = 'none';
+}
+
+function saveBudget() {
+  const budget = document.getElementById('budget-input').value;
+  if (!budget || budget <= 0) {
+    alert('Please enter a valid budget amount');
+    return;
+  }
+  localStorage.setItem('monthlyBudget', budget);
+  alert('✅ Budget saved: ¥' + Number(budget).toLocaleString());
+  closeBudgetModal();
+}
 // ── Category filter ───────────────────────────────────────────────────────────
 function filterByCategory(cat) {
   const items   = document.querySelectorAll('.expense-item');
@@ -298,6 +346,15 @@ function clearFilter() {
 // ── Auto-hide toast ───────────────────────────────────────────────────────────
 const toast = document.querySelector('.toast');
 if (toast) setTimeout(() => toast.style.opacity = '0', 3000);
+
+//Total basic cost start
+const totalBasic = <?= $totalBasic ?>;
+
+localStorage.setItem(
+    "dashboardBasicCost",
+    totalBasic
+);
+//Total basic cost end
 </script>
  
 </body>

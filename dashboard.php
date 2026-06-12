@@ -48,7 +48,7 @@
 
     <div class="card">
       <p id="streakCardTitle">Daily Streak</p>
-      <div class="streak">12 Days 🔥</div>
+      <div id="streak">0 Days 🔥</div>
     </div>
   </div>
 
@@ -59,7 +59,7 @@
     <div class="budget-card" onclick="goPage('basic.php')">
       <div class="budget-top">
         <span id="basicCostLabel">🏠 Basic Cost</span>
-        <span>¥60,000 / ¥100,000</span>
+        <span id="basicCostAmount">¥0 / ¥100,000</span>
       </div>
       <div class="bar"><div class="fill green"></div></div>
     </div>
@@ -67,7 +67,7 @@
     <div class="budget-card" onclick="goPage('entertainment.php')">
       <div class="budget-top">
         <span id="entertainmentLabel">🎮 Entertainment</span>
-        <span>¥20,000 / ¥50,000</span>
+        <span id="entertainmentAmount">¥0 / ¥50,000</span>
       </div>
       <div class="bar"><div class="fill pink"></div></div>
     </div>
@@ -75,7 +75,7 @@
     <div class="budget-card" onclick="goPage('emergency.php')">
       <div class="budget-top">
         <span id="emergencyLabel">⚠️ Emergency</span>
-        <span>¥15,000 / ¥50,000</span>
+        <span id="emergencyAmount">¥0 / ¥50,000</span>
       </div>
       <div class="bar"><div class="fill red"></div></div>
     </div>
@@ -85,6 +85,45 @@
 </div>
 
 <script>
+  //daily streak start
+  let streak = 0;
+let lastVisit = localStorage.getItem("lastVisit");
+
+function updateStreak() {
+    const today = new Date().toDateString();
+
+    if (!lastVisit) {
+        streak = 1;
+    } else {
+        const lastDate = new Date(lastVisit);
+        const currentDate = new Date(today);
+
+        const diffDays = Math.floor(
+            (currentDate - lastDate) / (1000 * 60 * 60 * 24)
+        );
+
+        if (diffDays === 1) {
+            streak = Number(localStorage.getItem("streak")) + 1;
+        } else if (diffDays === 0) {
+            streak = Number(localStorage.getItem("streak"));
+        } else {
+            streak = 1;
+        }
+    }
+
+    localStorage.setItem("streak", streak);
+    localStorage.setItem("lastVisit", today);
+
+    document.getElementById("streak").textContent =
+        `🔥 ${streak} days`;
+}
+
+updateStreak();
+
+
+
+
+  //daily streak end
 function goPage(page){
   window.location.href = page;
 }
@@ -101,7 +140,39 @@ function googleTranslateElementInit() {
   }, 'google_translate_element');
 }
 
+// Update basic cost budget display
+function updateBasicCostBudget() {
+  var budgetAmount = localStorage.getItem('monthlyBudget') ;
+  var basicCostSpan = document.getElementById('basicCostAmount');
+  if(basicCostSpan) {
+    basicCostSpan.textContent = '¥' + Number(localStorage.getItem('dashboardBasicCost') || 0).toLocaleString() + ' / ¥' + Number(budgetAmount).toLocaleString();
+  }
+}
+
+// Update all budget displays
+function updateBudgetDisplays() {
+  // Entertainment
+  var entertainmentBudget = localStorage.getItem('entertainmentBudget') || '50000';
+  var entertainmentSpan = document.getElementById('entertainmentAmount');
+  if(entertainmentSpan) {
+    entertainmentSpan.textContent = '¥' + Number(localStorage.getItem('dashboardEntertainmentCost') || 0).toLocaleString() + ' / ¥' + Number(entertainmentBudget).toLocaleString();
+  }
+  
+  // Emergency
+  var emergencyBudget = localStorage.getItem('emergencyBudget') || '50000';
+  var emergencySpan = document.getElementById('emergencyAmount');
+  if(emergencySpan) {
+    emergencySpan.textContent = '¥' + Number(localStorage.getItem('dashboardEmergencyCost') || 0).toLocaleString() + ' / ¥' + Number(emergencyBudget).toLocaleString();
+  }
+  
+  // Update basic too
+  updateBasicCostBudget();
+}
+
 document.addEventListener('DOMContentLoaded', function(){
+  // Update budgets on page load
+  updateBudgetDisplays();
+
   var el = document.getElementById('monthly-income');
   if(!el) return;
 
@@ -114,6 +185,13 @@ document.addEventListener('DOMContentLoaded', function(){
   el.addEventListener('click', function(){
     goPage('monthly_income.php');
   });
+});
+
+// Listen for storage changes from other tabs/windows
+window.addEventListener('storage', function(e) {
+  if(e.key === 'monthlyBudget' || e.key === 'entertainmentBudget' || e.key === 'emergencyBudget' || e.key === 'dashboardEntertainmentCost' || e.key === 'dashboardEmergencyCost' || e.key === 'dashboardBasicCost') {
+    updateBudgetDisplays();
+  }
 });
 localStorage.setItem("dashboardSavedAmount", 50000);
 localStorage.setItem("monthlySavingGoal", 50000);

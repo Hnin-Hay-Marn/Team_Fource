@@ -78,7 +78,10 @@ function getLabel($categories, $id) {
     <p class="subtitle">Fun & lifestyle spending</p>
     <?php include 'includes/topbar.php'; ?>
   </div>
-  <button class="btn-add">＋ Add Expense</button>
+  <div style="display: flex; gap: 10px;">
+    <button class="btn-add" onclick="openBudgetModal()">⚙️ Monthly Budget</button>
+    <button class="btn-add" onclick="openModal()">＋ Add Expense</button>
+  </div>
 </div>
  
 <!-- Category Grid -->
@@ -94,7 +97,7 @@ function getLabel($categories, $id) {
  
 <!-- Total -->
 <div class="total-bar">
-  <span class="total-label">Total Entertainment</span>
+  <span class="total-label">Total Entertainment Costs</span>
   <span class="total-amount">$<?= $total ?></span>
 </div>
  
@@ -123,6 +126,63 @@ function getLabel($categories, $id) {
 </div>
 </div>
  
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MONTHLY BUDGET MODAL
+══════════════════════════════════════════════════════════════════════════ -->
+<div id="budget-overlay" class="modal-overlay">
+  <div class="modal" id="budget-modal" onclick="event.stopPropagation()">
+    <h2>Set Monthly Budget</h2>
+    <p style="color: #666; margin-bottom: 20px;">Define your total monthly budget for entertainment</p>
+    
+    <label>Monthly Budget (¥)
+      <input type="number" id="budget-input" placeholder="50000" min="1" step="1000" required>
+    </label>
+    
+    <div class="modal-actions">
+      <button type="button" class="btn-cancel" onclick="closeBudgetModal()">Cancel</button>
+      <button type="button" class="btn-save" onclick="saveBudget()">Save Budget</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Budget overlay ───────────────────────────────────────────────────────────
+var budgetOverlay = document.getElementById('budget-overlay');
+
+budgetOverlay.addEventListener('click', function(e) {
+  if (e.target === budgetOverlay) closeBudgetModal();
+});
+
+// ── Budget modal ─────────────────────────────────────────────────────────────
+function openBudgetModal() {
+  const saved = localStorage.getItem('entertainmentBudget');
+  document.getElementById('budget-input').value = saved || '50000';
+  budgetOverlay.style.display = 'flex';
+}
+
+function closeBudgetModal() {
+  budgetOverlay.style.display = 'none';
+}
+
+function saveBudget() {
+  const budget = document.getElementById('budget-input').value;
+  if (!budget || budget <= 0) {
+    alert('Please enter a valid budget amount');
+    return;
+  }
+  localStorage.setItem('entertainmentBudget', budget);
+  alert('✅ Budget saved: ¥' + Number(budget).toLocaleString());
+  closeBudgetModal();
+}
+
+function openModal() {
+  alert('Add Expense - Coming soon!');
+}
+
+// Total entertainment spending sync
+var entertainmentCost = <?= array_sum(array_column($expenses, 'amount')) ?>;
+localStorage.setItem('dashboardEntertainmentCost', entertainmentCost);
+</script>
+
 </body>
 </html>
- 

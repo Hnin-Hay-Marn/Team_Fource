@@ -13,7 +13,7 @@ $expenses = [
     ['id'=>3,'name'=>'Family support','category'=>'family','date'=>'2026-05-20','amount'=>50],
 ];
  
-$total = array_sum(array_column($categories,'budget'));
+$totalEmergency = array_sum(array_column($categories,'budget'));
  
 function getIcon($cats,$id){
   foreach($cats as $c){ if($c['id']==$id) return $c['icon']; }
@@ -57,7 +57,10 @@ function getLabel($cats,$id){
     <?php include 'includes/topbar.php'; ?>
   </div>
   
-  <button class="btn-add" onclick="openModal()">＋ Add Expense</button>
+  <div style="display: flex; gap: 10px;">
+    <button class="btn-add" onclick="openBudgetModal()">⚙️ Monthly Budget</button>
+    <button class="btn-add" onclick="openModal()">＋ Add Expense</button>
+  </div>
 </div>
  
 <!-- CATEGORY GRID -->
@@ -74,7 +77,7 @@ function getLabel($cats,$id){
 <!-- TOTAL -->
 <div class="total-bar">
   <span>Total Emergency</span>
-  <span>$<?= $total ?></span>
+  <span>$<?= $totalEmergency ?></span>
 </div>
  
 <!-- LIST -->
@@ -94,10 +97,28 @@ function getLabel($cats,$id){
   </div>
 <?php endforeach; ?>
 </div>
- 
 </div>
 </div>
- 
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MONTHLY BUDGET MODAL
+══════════════════════════════════════════════════════════════════════════ -->
+<div class="modal" id="budget-overlay">
+  <div class="modal-box" id="budget-modal" onclick="event.stopPropagation()">
+    <h2>Set Monthly Budget</h2>
+    <p style="color: #666; margin-bottom: 20px;">Define your total monthly budget for emergency</p>
+    
+    <label>Monthly Budget (¥)
+      <input type="number" id="budget-input" placeholder="50000" min="1" step="1000" required>
+    </label>
+    
+    <div class="modal-actions">
+      <button type="button" class="cancel" onclick="closeBudgetModal()">Cancel</button>
+      <button type="button" class="save" onclick="saveBudget()">Save Budget</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL -->
 <div class="modal" id="modal">
   <div class="modal-box">
@@ -112,12 +133,51 @@ function getLabel($cats,$id){
 </div>
  
 <script>
+// ── Budget overlay ───────────────────────────────────────────────────────────
+var budgetOverlay = document.getElementById('budget-overlay');
+
+budgetOverlay.addEventListener('click', function(e) {
+  if (e.target === budgetOverlay) closeBudgetModal();
+});
+
+// ── Budget modal ─────────────────────────────────────────────────────────────
+function openBudgetModal() {
+  const saved = localStorage.getItem('emergencyBudget');
+  document.getElementById('budget-input').value = saved || '50000';
+  budgetOverlay.style.display = 'flex';
+}
+
+function closeBudgetModal() {
+  budgetOverlay.style.display = 'none';
+}
+
+function saveBudget() {
+  const budget = document.getElementById('budget-input').value;
+  if (!budget || budget <= 0) {
+    alert('Please enter a valid budget amount');
+    return;
+  }
+  localStorage.setItem('emergencyBudget', budget);
+  alert('✅ Budget saved: ¥' + Number(budget).toLocaleString());
+  closeBudgetModal();
+}
+
+// ── Expense modal ────────────────────────────────────────────────────────────
 function openModal(){
   document.getElementById("modal").style.display="flex";
 }
 function closeModal(){
   document.getElementById("modal").style.display="none";
 }
+
+//total emergency budget start
+const totalEmergency = <?= $totalEmergency ?>;
+
+localStorage.setItem(
+    "dashboardEmergencyCost",
+    totalEmergency
+);
+//total emergency budget end
 </script>
  
 </body>
