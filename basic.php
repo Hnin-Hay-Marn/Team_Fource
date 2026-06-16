@@ -1,28 +1,46 @@
 <?php
+require_once 'db.php';
+$pdo = getDb();
 // ── Sample expense data (replace with DB queries later) ──────────────────────
-$categories = [
-    ['id'=>'food',        'icon'=>'🍔', 'label'=>'Food',        'budget'=>117],
-    ['id'=>'car',         'icon'=>'🚗', 'label'=>'Car',         'budget'=>70],
-    ['id'=>'electricity', 'icon'=>'💡', 'label'=>'Electricity', 'budget'=>120],
-    ['id'=>'gas',         'icon'=>'🔥', 'label'=>'Gas',         'budget'=>80],
-    ['id'=>'rent',        'icon'=>'🏠', 'label'=>'Rent',        'budget'=>900],
-    ['id'=>'internet',    'icon'=>'🌐', 'label'=>'Internet',    'budget'=>60],
-    ['id'=>'phone',       'icon'=>'📱', 'label'=>'Phone',       'budget'=>50],
-    ['id'=>'water',       'icon'=>'💧', 'label'=>'Water',       'budget'=>40],
-    ['id'=>'insurance',   'icon'=>'🛡️', 'label'=>'Insurance',  'budget'=>150],
-    ['id'=>'shopping',    'icon'=>'🛍️', 'label'=>'Shopping',   'budget'=>89],
-    ['id'=>'health',      'icon'=>'🏥', 'label'=>'Health',      'budget'=>90],
-];
+// $categories = [
+//     ['id'=>'food',        'icon'=>'🍔', 'label'=>'Food',        'budget'=>117],
+//     ['id'=>'car',         'icon'=>'🚗', 'label'=>'Car',         'budget'=>70],
+//     ['id'=>'electricity', 'icon'=>'💡', 'label'=>'Electricity', 'budget'=>120],
+//     ['id'=>'gas',         'icon'=>'🔥', 'label'=>'Gas',         'budget'=>80],
+//     ['id'=>'rent',        'icon'=>'🏠', 'label'=>'Rent',        'budget'=>900],
+//     ['id'=>'internet',    'icon'=>'🌐', 'label'=>'Internet',    'budget'=>60],
+//     ['id'=>'phone',       'icon'=>'📱', 'label'=>'Phone',       'budget'=>50],
+//     ['id'=>'water',       'icon'=>'💧', 'label'=>'Water',       'budget'=>40],
+//     ['id'=>'insurance',   'icon'=>'🛡️', 'label'=>'Insurance',  'budget'=>150],
+//     ['id'=>'shopping',    'icon'=>'🛍️', 'label'=>'Shopping',   'budget'=>89],
+//     ['id'=>'health',      'icon'=>'🏥', 'label'=>'Health',      'budget'=>90],
+// ];
+
+$stmt = $pdo->query("
+    SELECT *
+    FROM categories
+    WHERE category_type = 'basic'
+");
+
+$categories = $stmt->fetchAll();
  
-$expenses = [
-    ['id'=>1, 'name'=>'June rent',        'category'=>'rent',     'date'=>'2026-06-01', 'amount'=>900],
-    ['id'=>2, 'name'=>'Weekly groceries', 'category'=>'food',     'date'=>'2026-05-28', 'amount'=>85],
-    ['id'=>3, 'name'=>'Gas fill-up',      'category'=>'car',      'date'=>'2026-05-27', 'amount'=>55],
-    ['id'=>4, 'name'=>'Takeout dinner',   'category'=>'food',     'date'=>'2026-05-25', 'amount'=>32],
-    ['id'=>5, 'name'=>'Car wash',         'category'=>'car',      'date'=>'2026-05-20', 'amount'=>15],
-    ['id'=>6, 'name'=>'New shoes',        'category'=>'shopping', 'date'=>'2026-05-15', 'amount'=>89],
-    ['id'=>7, 'name'=>'Dentist visit',    'category'=>'health',   'date'=>'2026-05-10', 'amount'=>90],
-];
+// $expenses = [
+//     ['id'=>1, 'name'=>'June rent',        'category'=>'rent',     'date'=>'2026-06-01', 'amount'=>900],
+//     ['id'=>2, 'name'=>'Weekly groceries', 'category'=>'food',     'date'=>'2026-05-28', 'amount'=>85],
+//     ['id'=>3, 'name'=>'Gas fill-up',      'category'=>'car',      'date'=>'2026-05-27', 'amount'=>55],
+//     ['id'=>4, 'name'=>'Takeout dinner',   'category'=>'food',     'date'=>'2026-05-25', 'amount'=>32],
+//     ['id'=>5, 'name'=>'Car wash',         'category'=>'car',      'date'=>'2026-05-20', 'amount'=>15],
+//     ['id'=>6, 'name'=>'New shoes',        'category'=>'shopping', 'date'=>'2026-05-15', 'amount'=>89],
+//     ['id'=>7, 'name'=>'Dentist visit',    'category'=>'health',   'date'=>'2026-05-10', 'amount'=>90],
+// ];
+
+$stmt = $pdo->query("
+    SELECT *
+    FROM expenses
+    ORDER BY date DESC
+");
+
+$expenses = $stmt->fetchAll();
  
 // ── Handle add/edit/delete (POST) ─────────────────────────────────────────────
 $action  = $_POST['action']  ?? '';
@@ -30,13 +48,37 @@ $message = '';
  
 if ($action === 'add') {
     // TODO: INSERT INTO expenses ...
-    $message = '✅ Expense added!';
+    $stmt = $pdo->prepare("
+        INSERT INTO expenses
+        (name, category, date, amount)
+        VALUES (?, ?, ?, ?)
+    ");
+
+    $stmt->execute([
+        $_POST['name'],
+        $_POST['category'],
+        $_POST['date'],
+        $_POST['amount']
+    ]);
+    header("Location: basic.php");
+    $message = '🎉 Added!';
 } elseif ($action === 'edit') {
-    // TODO: UPDATE expenses SET ...
-    $message = '✅ Expense updated!';
+  $stmt = $pdo->prepare("UPDATE expenses SET name = ?, category = ?, date = ?, amount = ? WHERE id = ?");
+
+  $stmt->execute([
+    $_POST['name'],
+    $_POST['category'],
+    $_POST['date'],
+    $_POST['amount'],
+    $_POST['id']
+  ]);
+  header("Location: basic.php");
+  $message = '✏️ Expense updated!';
 } elseif ($action === 'delete') {
-    // TODO: DELETE FROM expenses WHERE id = ...
-    $message = '🗑️ Expense deleted.';
+  $stmt = $pdo->prepare("DELETE FROM expenses WHERE id = ?");
+  $stmt->execute([$_POST['id']]);
+  header("Location: basic.php");
+  $message = '🗑️ Expense deleted.';
 }
  
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -105,7 +147,7 @@ function getCategoryLabel(array $categories, string $id): string {
         <div class="cat-card" onclick="filterByCategory('<?= $cat['id'] ?>')">
           <span class="cat-icon"><?= $cat['icon'] ?></span>
           <span class="cat-label"><?= htmlspecialchars($cat['label']) ?></span>
-          <span class="cat-amount">$<?= number_format($cat['budget']) ?></span>
+          <span class="cat-amount">¥<?= number_format($cat['budget']) ?></span>
         </div>
       <?php endforeach; ?>
     </div>
@@ -113,7 +155,7 @@ function getCategoryLabel(array $categories, string $id): string {
     <!-- ── Total bar ─────────────────────────────────────────────────────── -->
     <div class="total-bar">
       <span class="total-label">Total Basic Costs</span>
-      <span class="total-amount">$<?= number_format($totalBasic) ?></span>
+      <span class="total-amount">¥<?= number_format($totalBasic) ?></span>
     </div>
  
     <!-- ── Expense list ──────────────────────────────────────────────────── -->
@@ -135,7 +177,7 @@ function getCategoryLabel(array $categories, string $id): string {
               &bull; <?= htmlspecialchars($exp['date']) ?>
             </span>
           </div>
-          <span class="exp-amount">$<?= number_format($exp['amount']) ?></span>
+          <span class="exp-amount">¥<?= number_format($exp['amount']) ?></span>
           <div class="exp-actions">
             <button class="btn-icon" title="Edit"
               onclick="openEditModal(<?= $exp['id'] ?>, '<?= addslashes($exp['name']) ?>', '<?= $exp['category'] ?>', '<?= $exp['date'] ?>', <?= $exp['amount'] ?>)">✏️</button>
@@ -157,7 +199,7 @@ function getCategoryLabel(array $categories, string $id): string {
   <div class="modal" id="modal-box" onclick="event.stopPropagation()">
     <h2 id="modal-title">Add Expense</h2>
  
-    <form method="POST" action="basic.php">
+    <form id="add-expense-form" method="POST" action="basic.php">
       <input type="hidden" name="action" id="form-action" value="add">
       <input type="hidden" name="id"     id="form-id"     value="">
  
@@ -179,7 +221,7 @@ function getCategoryLabel(array $categories, string $id): string {
                value="<?= date('Y-m-d') ?>" required>
       </label>
  
-      <label>Amount ($)
+      <label>Amount (¥)
         <input type="number" name="amount" id="form-amount"
                placeholder="0" min="0" step="0.01" required>
       </label>

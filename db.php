@@ -23,12 +23,21 @@ function getDb(): PDO
 
 function initializeDatabase(): void
 {
+    $path = getDbPath();
+
+    // Only initialize if the DB file does not exist or is empty.
+    if (file_exists($path) && filesize($path) > 0) {
+        return;
+    }
+
     $schema = file_get_contents(__DIR__ . '/schema.sql');
     if ($schema === false) {
         throw new RuntimeException('Could not read schema.sql');
     }
 
-    getDb()->exec($schema);
+    // Create PDO connection and execute schema to bootstrap DB.
+    $pdo = getDb();
+    $pdo->exec($schema);
 }
 
 // Ensure the database is initialized when this file is included.
