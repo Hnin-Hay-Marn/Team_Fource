@@ -50,8 +50,34 @@ $stmt = $pdo->prepare(
 $stmt->execute();
 $expenses = $stmt->fetchAll();
 
+// Category totals
+$categoryTotals = [];
+
+$stmt = $pdo->query("
+    SELECT category, SUM(amount) AS total
+    FROM expenses
+    GROUP BY category
+");
+
+foreach ($stmt->fetchAll() as $row) {
+    $categoryTotals[$row['category']] = $row['total'];
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────
-$total = array_sum(array_column($categories, 'budget'));
+// Total entertainment budget start------------------------
+//$total = array_sum(array_column($categories, 'budget'));
+$stmt = $pdo->query("
+    SELECT COALESCE(SUM(amount),0)
+    FROM expenses
+    WHERE category IN (
+        SELECT id
+        FROM categories
+        WHERE category_type = 'entertainment'
+    )
+");
+
+$total = $stmt->fetchColumn();
+//total entertainment budget end------------------------
 
 function getCategoryIcon(array $categories, string $id): string {
     foreach ($categories as $c) {
@@ -114,8 +140,14 @@ function getCategoryLabel(array $categories, string $id): string {
 <?php foreach ($categories as $cat): ?>
   <div class="cat-card" onclick="filterByCategory('<?= $cat['id'] ?>')">
     <span class="cat-icon"><?= $cat['icon'] ?></span>
-    <span class="cat-label"><?= $cat['label'] ?></span>
-    <span class="cat-amount">¥<?= $cat['budget'] ?></span>
+
+    <span class="cat-label">
+      <?= htmlspecialchars($cat['label']) ?>
+    </span>
+
+    <span class="cat-amount">
+      ¥<?= number_format($categoryTotals[$cat['id']] ?? 0) ?>
+    </span>
   </div>
 <?php endforeach; ?>
 </div>
@@ -123,7 +155,9 @@ function getCategoryLabel(array $categories, string $id): string {
 <!-- Total -->
 <div class="total-bar">
   <span class="total-label">Total Entertainment Costs</span>
-  <span class="total-amount">¥<?= $total ?></span>
+  <span class="total-amount">
+    ¥<?= number_format($total) ?>
+</span>
 </div>
  
 <!-- ── Expense list ──────────────────────────────────────────────────── -->

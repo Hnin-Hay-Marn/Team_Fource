@@ -50,8 +50,35 @@ $stmt = $pdo->prepare(
 $stmt->execute();
 $expenses = $stmt->fetchAll();
 
+// Category totals for the grid NEW
+$categoryTotals = [];
+
+$stmt = $pdo->query("
+    SELECT category, SUM(amount) AS total
+    FROM expenses
+    GROUP BY category
+");
+
+foreach ($stmt->fetchAll() as $row) {
+    $categoryTotals[$row['category']] = $row['total'];
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
-$totalEmergency = array_sum(array_column($categories,'budget'));
+//total amount of emergency budget start------------------------
+//$totalEmergency = array_sum(array_column($categories,'budget'));
+$stmt = $pdo->query("
+    SELECT COALESCE(SUM(amount),0)
+    FROM expenses
+    WHERE category IN (
+        SELECT id
+        FROM categories
+        WHERE category_type = 'emergency'
+    )
+");
+
+$totalEmergency = $stmt->fetchColumn();
+
+//total amount of emergency budget end------------------------
 
 function getIcon($cats,$id){
   foreach($cats as $c){ if($c['id']==$id) return $c['icon']; }
@@ -117,11 +144,23 @@ function getCategoryLabel(array $categories, string $id): string {
 <!-- CATEGORY GRID -->
 <div class="category-grid">
 <?php foreach($categories as $c): ?>
+
   <div class="cat-card" onclick="filterByCategory('<?= $c['id'] ?>')">
-    <span class="cat-icon"><?= $c['icon'] ?></span>
-    <span class="cat-label"><?= $c['label'] ?></span>
-    <span class="cat-amount">¥<?= $c['budget'] ?></span>
+
+    <span class="cat-icon">
+      <?= $c['icon'] ?>
+    </span>
+
+    <span class="cat-label">
+      <?= $c['label'] ?>
+    </span>
+
+    <span class="cat-amount">
+      ¥<?= number_format($categoryTotals[$c['id']] ?? 0) ?>
+    </span>
+
   </div>
+
 <?php endforeach; ?>
 </div>
  
@@ -150,7 +189,7 @@ function getCategoryLabel(array $categories, string $id): string {
               &bull; <?= htmlspecialchars($exp['date']) ?>
             </span>
           </div>
-          <span class="exp-amount">$<?= number_format($exp['amount']) ?></span>
+          <span class="exp-amount">¥<?= number_format($exp['amount']) ?></span>
           <div class="exp-actions">
             <button class="btn-icon" title="Edit"
               onclick="openEditModal(<?= $exp['id'] ?>, '<?= addslashes($exp['name']) ?>', '<?= $exp['category'] ?>', '<?= $exp['date'] ?>', <?= $exp['amount'] ?>)">✏️</button>
@@ -167,8 +206,8 @@ function getCategoryLabel(array $categories, string $id): string {
 <!-- ══════════════════════════════════════════════════════════════════════════
      MONTHLY BUDGET MODAL
 ══════════════════════════════════════════════════════════════════════════ -->
-<div class="modal" id="budget-overlay">
-  <div class="modal-box" id="budget-modal" onclick="event.stopPropagation()">
+<div id="budget-overlay" class="modal-overlay">
+  <div class="modal" id="budget-modal" onclick="event.stopPropagation()">
     <h2>Set Monthly Budget</h2>
     <p style="color: #666; margin-bottom: 20px;">Define your total monthly budget for emergency</p>
    
@@ -177,8 +216,8 @@ function getCategoryLabel(array $categories, string $id): string {
     </label>
    
     <div class="modal-actions">
-      <button type="button" class="cancel" onclick="closeBudgetModal()">Cancel</button>
-      <button type="button" class="save" onclick="saveBudget()">Save Budget</button>
+      <button type="button" class="btn-cancel" onclick="closeBudgetModal()">Cancel</button>
+      <button type="button" class="btn-save" onclick="saveBudget()">Save Budget</button>
     </div>
   </div>
 </div>
@@ -212,7 +251,7 @@ function getCategoryLabel(array $categories, string $id): string {
                value="<?= date('Y-m-d') ?>" required>
       </label>
  
-      <label>Amount ($)
+      <label>Amount (¥)
         <input type="number" name="amount" id="form-amount"
                placeholder="0" min="0" step="0.01" required>
       </label>

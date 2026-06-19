@@ -1,44 +1,34 @@
 <?php
 
-function getDbPath(): string
-{
-    return __DIR__ . '/database.sqlite';
-}
-
 function getDb(): PDO
 {
     static $pdo = null;
 
     if ($pdo === null) {
-        $path = getDbPath();
-        $dsn = "sqlite:$path";
-        $pdo = new PDO($dsn);
-        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-        $pdo->exec('PRAGMA foreign_keys = ON');
+
+        $host = 'localhost';
+        $dbname = 'newFource';
+        $username = 'root';
+        $password = 'root';
+
+        $dsn = "mysql:host={$host};dbname={$dbname};charset=utf8mb4";
+
+        try {
+            $pdo = new PDO(
+                $dsn,
+                $username,
+                $password,
+                [
+                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                    PDO::ATTR_EMULATE_PREPARES => false
+                ]
+            );
+        } catch (PDOException $e) {
+            die("Database Connection Failed: " . $e->getMessage());
+        }
     }
 
     return $pdo;
 }
-
-function initializeDatabase(): void
-{
-    $path = getDbPath();
-
-    // Only initialize if the DB file does not exist or is empty.
-    if (file_exists($path) && filesize($path) > 0) {
-        return;
-    }
-
-    $schema = file_get_contents(__DIR__ . '/schema.sql');
-    if ($schema === false) {
-        throw new RuntimeException('Could not read schema.sql');
-    }
-
-    // Create PDO connection and execute schema to bootstrap DB.
-    $pdo = getDb();
-    $pdo->exec($schema);
-}
-
-// Ensure the database is initialized when this file is included.
-initializeDatabase();
+?>

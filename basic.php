@@ -1,20 +1,6 @@
 <?php
 require_once 'db.php';
 $pdo = getDb();
-// ── Sample expense data (replace with DB queries later) ──────────────────────
-// $categories = [
-//     ['id'=>'food',        'icon'=>'🍔', 'label'=>'Food',        'budget'=>117],
-//     ['id'=>'car',         'icon'=>'🚗', 'label'=>'Car',         'budget'=>70],
-//     ['id'=>'electricity', 'icon'=>'💡', 'label'=>'Electricity', 'budget'=>120],
-//     ['id'=>'gas',         'icon'=>'🔥', 'label'=>'Gas',         'budget'=>80],
-//     ['id'=>'rent',        'icon'=>'🏠', 'label'=>'Rent',        'budget'=>900],
-//     ['id'=>'internet',    'icon'=>'🌐', 'label'=>'Internet',    'budget'=>60],
-//     ['id'=>'phone',       'icon'=>'📱', 'label'=>'Phone',       'budget'=>50],
-//     ['id'=>'water',       'icon'=>'💧', 'label'=>'Water',       'budget'=>40],
-//     ['id'=>'insurance',   'icon'=>'🛡️', 'label'=>'Insurance',  'budget'=>150],
-//     ['id'=>'shopping',    'icon'=>'🛍️', 'label'=>'Shopping',   'budget'=>89],
-//     ['id'=>'health',      'icon'=>'🏥', 'label'=>'Health',      'budget'=>90],
-// ];
 
 $stmt = $pdo->query("
     SELECT *
@@ -24,23 +10,32 @@ $stmt = $pdo->query("
 
 $categories = $stmt->fetchAll();
  
-// $expenses = [
-//     ['id'=>1, 'name'=>'June rent',        'category'=>'rent',     'date'=>'2026-06-01', 'amount'=>900],
-//     ['id'=>2, 'name'=>'Weekly groceries', 'category'=>'food',     'date'=>'2026-05-28', 'amount'=>85],
-//     ['id'=>3, 'name'=>'Gas fill-up',      'category'=>'car',      'date'=>'2026-05-27', 'amount'=>55],
-//     ['id'=>4, 'name'=>'Takeout dinner',   'category'=>'food',     'date'=>'2026-05-25', 'amount'=>32],
-//     ['id'=>5, 'name'=>'Car wash',         'category'=>'car',      'date'=>'2026-05-20', 'amount'=>15],
-//     ['id'=>6, 'name'=>'New shoes',        'category'=>'shopping', 'date'=>'2026-05-15', 'amount'=>89],
-//     ['id'=>7, 'name'=>'Dentist visit',    'category'=>'health',   'date'=>'2026-05-10', 'amount'=>90],
-// ];
 
 $stmt = $pdo->query("
     SELECT *
     FROM expenses
+    WHERE category IN (
+        SELECT id
+        FROM categories
+        WHERE category_type = 'basic'
+    )
     ORDER BY date DESC
 ");
 
 $expenses = $stmt->fetchAll();
+
+// Category totals
+$categoryTotals = [];
+
+$stmt = $pdo->query("
+    SELECT category, SUM(amount) AS total
+    FROM expenses
+    GROUP BY category
+");
+
+foreach ($stmt->fetchAll() as $row) {
+    $categoryTotals[$row['category']] = $row['total'];
+}
  
 // ── Handle add/edit/delete (POST) ─────────────────────────────────────────────
 $action  = $_POST['action']  ?? '';
@@ -82,7 +77,21 @@ if ($action === 'add') {
 }
  
 // ── Helpers ───────────────────────────────────────────────────────────────────
-$totalBasic = array_sum(array_column($categories, 'budget'));
+//total amount of basic budget start------------------------
+//$totalBasic = array_sum(array_column($categories, 'budget'));
+$stmt = $pdo->query("
+    SELECT COALESCE(SUM(amount),0)
+    FROM expenses
+    WHERE category IN (
+        SELECT id
+        FROM categories
+        WHERE category_type = 'basic'
+    )
+");
+
+$totalBasic = $stmt->fetchColumn();
+
+//total amount of basic budget end------------------------
  
 function getCategoryIcon(array $categories, string $id): string {
     foreach ($categories as $c) {
@@ -143,14 +152,27 @@ function getCategoryLabel(array $categories, string $id): string {
  
     <!-- ── Category grid ────────────────────────────────────────────────── -->
     <div class="category-grid">
-      <?php foreach ($categories as $cat): ?>
-        <div class="cat-card" onclick="filterByCategory('<?= $cat['id'] ?>')">
-          <span class="cat-icon"><?= $cat['icon'] ?></span>
-          <span class="cat-label"><?= htmlspecialchars($cat['label']) ?></span>
-          <span class="cat-amount">¥<?= number_format($cat['budget']) ?></span>
-        </div>
-      <?php endforeach; ?>
+  <?php foreach ($categories as $cat): ?>
+
+    <div class="cat-card"
+         onclick="filterByCategory('<?= $cat['id'] ?>')">
+
+      <span class="cat-icon">
+        <?= $cat['icon'] ?>
+      </span>
+
+      <span class="cat-label">
+        <?= htmlspecialchars($cat['label']) ?>
+      </span>
+
+      <span class="cat-amount">
+        ¥<?= number_format($categoryTotals[$cat['id']] ?? 0) ?>
+      </span>
+
     </div>
+
+  <?php endforeach; ?>
+</div>
  
     <!-- ── Total bar ─────────────────────────────────────────────────────── -->
     <div class="total-bar">
