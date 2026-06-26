@@ -13,7 +13,7 @@
 <body>
 <div class="layout">
   <aside class="sidebar">
-    <h2><span class="logo-icon">💸</span> FOURCE</h2>
+    <h2><img src="img/logo.png" alt="Money Tracker" class="logo-img"> Money Tracker</h2>
     <a id="navDashboard" href="dashboard.php">Dashboard</a>
     <a id="navGoals" href="goals.php">Savings Goals</a>
     <a id="navAnalytics" href="analytics.php">Analytics</a>

@@ -1,8 +1,8 @@
-DROP TABLE IF EXISTS expenses;
-DROP TABLE IF EXISTS categories;
-DROP TABLE IF EXISTS budgets;
-DROP TABLE IF EXISTS incomes;
-DROP TABLE IF EXISTS settings;
+-- DROP TABLE IF EXISTS expenses;
+-- DROP TABLE IF EXISTS categories;
+-- DROP TABLE IF EXISTS budgets;
+-- DROP TABLE IF EXISTS incomes;
+-- DROP TABLE IF EXISTS settings;
 
 CREATE TABLE categories (
 id VARCHAR(50) PRIMARY KEY,

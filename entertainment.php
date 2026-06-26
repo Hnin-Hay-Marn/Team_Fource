@@ -108,7 +108,7 @@ function getCategoryLabel(array $categories, string $id): string {
  
 <!-- Sidebar -->
 <aside class="sidebar">
-    <h2><span class="logo-icon">💸</span> FOURCE</h2>
+   <h2><img src="img/logo.png" alt="Money Tracker" class="logo-img"> Money Tracker</h2>
     <a href="dashboard.php" class="active">Dashboard</a>
     <a href="goals.php">Savings Goals</a>
     <a href="analytics.php">Analysis</a>
