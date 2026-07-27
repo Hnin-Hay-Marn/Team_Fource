@@ -1,4 +1,18 @@
-<?php ?>
+<?php 
+require_once 'db.php';
+
+$pdo = getDb();
+
+$stmt = $pdo->prepare("
+SELECT value
+FROM settings
+WHERE name='total_savings'
+");
+
+$stmt->execute();
+
+$totalSavings = (int)$stmt->fetchColumn();
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,24 +21,19 @@
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/dashboard.css">
 <link rel="stylesheet" href="css/profile.css">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
  
 <body>
-<div class="layout">
-<aside class="sidebar">
-<h2><img src="img/logo.png" alt="Money Tracker" class="logo-img"> Money Tracker</h2>
-<a id="navDashboard"    href="dashboard.php">Dashboard</a>
-<a id="navGoals"        href="goals.php">Savings Goals</a>
-<a id="navAnalytics"    href="analytics.php">Analytics</a>
-<a id="navAchievements" href="achievements.php">Achievements</a>
-</aside>
- 
-  <div class="main">
+  <?php include 'includes/navbar.php'; ?>
+  <?php include 'includes/sidebar.php'; ?>
+
+<div class="main container-fluid mt-4">
+
 <div class="header">
-<h2>👤 Profile</h2>
 <div class="top-actions">
 <div id="google_translate_element" class="google-translate"></div>
-<button onclick="goPage('dashboard.php')">🏠 Dashboard</button>
+<!-- <button onclick="goPage('dashboard.php')">🏠 Dashboard</button> -->
 </div>
 </div>
  
@@ -51,7 +60,9 @@
         <!-- Total savings -->
 <div class="banner-savings">
     <span class="savings-label">💰 Total Savings</span>
-    <span class="savings-amount" id="bannerSavings">¥0</span>
+    <span class="savings-amount" id="bannerSavings">
+        ¥<?= number_format($totalSavings) ?>
+    </span>
 </div>
 
 
@@ -116,6 +127,7 @@
 </div>
  
         <button class="btn-save" onclick="saveProfile()">Save Changes</button>
+        <button class="btn-save" onclick="window.location.href='logout.php'">Logout</button>
 </div>
  
     </div><!-- /profile-wrapper -->
@@ -131,66 +143,45 @@ function goPage(p) { window.location.href = p; }
 function loadProfile() {
 
   const fn = localStorage.getItem('profileFirstName') || 'Ruby';
+  const ln = localStorage.getItem('profileLastName') || '';
+  const em = localStorage.getItem('profileEmail') || 'ruby@example.com';
 
-  const ln = localStorage.getItem('profileLastName')  || '';
-
-  const em = localStorage.getItem('profileEmail')     || 'ruby@example.com';
- 
-  document.getElementById('firstName').value  = fn;
-
-  document.getElementById('lastName').value   = ln;
-
+  document.getElementById('firstName').value = fn;
+  document.getElementById('lastName').value = ln;
   document.getElementById('emailField').value = em;
- 
-  document.getElementById('bannerName').textContent = (fn + ' ' + ln).trim() || 'Ruby';
- 
-  document.getElementById('currencySelect').value = localStorage.getItem('profileCurrency') || 'JPY';
 
-  document.getElementById('languageSelect').value = localStorage.getItem('profileLanguage') || 'en';
- 
+  document.getElementById('bannerName').textContent =
+      (fn + ' ' + ln).trim() || 'Ruby';
+
+  document.getElementById('currencySelect').value =
+      localStorage.getItem('profileCurrency') || 'JPY';
+
+  document.getElementById('languageSelect').value =
+      localStorage.getItem('profileLanguage') || 'en';
+
   // Streak
-
   const streak = localStorage.getItem('streak') || '0';
-
   document.getElementById('bannerStreak').textContent = streak;
- 
-  // Savings
 
-const savings =
-    Number(localStorage.getItem('totalSavings')) || 0;
-
-document.getElementById('bannerSavings').textContent =
-    '¥' + savings.toLocaleString();
-
-  document.getElementById('bannerSavings').textContent = '¥' + Number(savings).toLocaleString();
-
-  // Total savings from dashboard
-const totalSavings =
-    Number(localStorage.getItem("totalSavings")) || 0;
-
-document.getElementById("bannerSavings").textContent =
-    "¥" + totalSavings.toLocaleString();
- 
   // Avatar
-
   const saved = localStorage.getItem('profileAvatar');
+  if (saved) {
+      applyAvatar(saved);
+  }
 
-  if (saved) applyAvatar(saved);
- 
   // Member since
-
   let since = localStorage.getItem('memberSince');
 
   if (!since) {
-
-    since = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-
-    localStorage.setItem('memberSince', since);
-
+      since = new Date().toLocaleDateString('en-US', {
+          month: 'long',
+          year: 'numeric'
+      });
+      localStorage.setItem('memberSince', since);
   }
 
-  document.getElementById('bannerMember').textContent = 'Member since ' + since;
-
+  document.getElementById('bannerMember').textContent =
+      'Member since ' + since;
 }
  
 function applyAvatar(src) {
@@ -300,6 +291,7 @@ function googleTranslateElementInit() {
 document.addEventListener('DOMContentLoaded', loadProfile);
 </script>
 <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
  

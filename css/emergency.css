@@ -259,7 +259,7 @@
 }
 .modal-overlay.active { display: flex; }
  
-.modal {
+.custom-modal {
   background: white;
   padding: 32px;
   border-radius: 24px;
@@ -275,20 +275,20 @@
   to   { transform: translateY(0);    opacity: 1; }
 }
  
-.modal h2 {
+.custom-modal h2 {
   margin: 0 0 20px;
   font-size: 20px;
   font-weight: 700;
   color: #1a1a2e;
 }
  
-.modal p {
+.custom-modal p {
   margin: 0 0 20px;
   color: #6b7280;
   font-size: 14px;
 }
  
-.modal label {
+.custom-modal label {
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -298,8 +298,8 @@
   color: #374151;
 }
  
-.modal input,
-.modal select {
+.custom-modal input,
+.custom-modal select {
   width: 100%;
   margin-top: 6px;
   margin-bottom: 15px;
@@ -311,12 +311,12 @@
   outline: none;
   transition: border-color 0.2s;
 }
-.modal input:focus,
-.modal select:focus {
+.custom-modal input:focus,
+.custom-modal select:focus {
   border-color: #dc2626;
 }
  
-.modal-actions {
+.custom-modal .modal-actions {
   display: flex;
   justify-content: flex-end;
   gap: 10px;

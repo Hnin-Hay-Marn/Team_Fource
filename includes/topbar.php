@@ -10,7 +10,7 @@
  <body>
     <div class="top-actions">
   <div id="google_translate_element" class="google-translate"></div>
-  <button type="button" class="topbar-button" onclick="goPage('dashboard.php')">← Back to Dashboard</button>
+  <!-- <button type="button" class="topbar-button" onclick="goPage('dashboard.php')">← Back to Dashboard</button> -->
 </div>
 <script>
 function goPage(page) {

@@ -8,6 +8,7 @@
 }
  
 body {
+  padding-top: 45px; 
   background: #f6f8fb;
   color: #263238;
 }
@@ -45,6 +46,7 @@ body {
 .main {
   flex: 1;
   padding: 40px;
+  /* padding:100px 30px 30px; */
 }
  
 .subtitle {
@@ -116,3 +118,34 @@ body {
   margin-right: 8px;
 }
  
+/* ==========================
+   Bootstrap Offcanvas
+========================== */
+
+.offcanvas {
+    width: 260px;
+}
+
+.offcanvas-body a {
+    border-radius: 12px;
+    text-align: left;
+    margin-bottom: 10px;
+}
+
+.offcanvas-title {
+    color: #2e7d60;
+    font-weight: bold;
+}
+
+.navbar {
+    height: 70px;
+}
+
+.navbar-brand {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+#google_translate_element {
+    margin-right: 10px;
+}

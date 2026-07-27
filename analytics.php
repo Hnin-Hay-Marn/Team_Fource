@@ -5,19 +5,15 @@
   <title>Analysis</title>
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/analytics.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+
 </head>
 
 <body>
-<div class="layout">
-  <aside class="sidebar">
-    <h2><img src="img/logo.png" alt="Money Tracker" class="logo-img"> Money Tracker</h2>
-    <a href="dashboard.php">Dashboard</a>
-    <a href="goals.php">Savings Goals</a>
-    <a href="analytics.php">Analysis</a>
-    <a href="achievements.php">Achievements</a>
-  </aside>
+  <?php include 'includes/navbar.php'; ?>
+  <?php include 'includes/sidebar.php'; ?>
 
-  <main class="main">
+<div class="main container-fluid mt-4">
 
     <div class="analytics-header">
       <div>
@@ -164,7 +160,7 @@
       <button onclick="location.href='goals.php'">View Goals →</button>
     </section>
 
-  </main>
+</div>
 </div>
 
 <script>
@@ -437,6 +433,7 @@ function updateAnalytics() {
 document.addEventListener("DOMContentLoaded", updateAnalytics);
 window.addEventListener("storage", updateAnalytics);
 </script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>
 </html>

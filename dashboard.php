@@ -1,4 +1,363 @@
-<?php ?>
+<?php 
+session_start();
+require_once "db.php";
+$pdo = getDb();
+
+$today = date('Y-m-d');
+
+// 前回ログイン日を取得
+$stmt = $pdo->prepare("
+SELECT value
+FROM settings
+WHERE name='last_login'
+");
+$stmt->execute();
+
+$lastLogin = $stmt->fetchColumn();
+
+if ($lastLogin != $today) {
+
+    // streak を +1
+    $stmt = $pdo->prepare("
+    UPDATE settings
+    SET value = value + 1
+    WHERE name='streak'
+    ");
+    $stmt->execute();
+
+    // 今日の日付を保存
+    $stmt = $pdo->prepare("
+    UPDATE settings
+    SET value = ?
+    WHERE name='last_login'
+    ");
+    $stmt->execute([$today]);
+}
+
+//monthly income start------
+$currentMonth = date('Y-m');
+
+$stmt = $pdo->prepare("
+SELECT value
+FROM settings
+WHERE name='month_closed'
+");
+
+$stmt->execute();
+
+$closedMonth = $stmt->fetchColumn();
+
+
+
+//========================
+// Savingを保存
+//========================
+if (
+    $_SERVER['REQUEST_METHOD'] == 'POST'
+    && isset($_POST['target_amount'])
+) {
+
+    $targetAmount = (int)$_POST['target_amount'];
+
+    $stmt = $pdo->prepare("
+        INSERT INTO savings(month,target_amount)
+        VALUES(?,?)
+        ON DUPLICATE KEY UPDATE
+        target_amount=VALUES(target_amount)
+    ");
+
+    $stmt->execute([
+        $currentMonth,
+        $targetAmount
+    ]);
+}
+//-------------------------
+// Monthly Income
+//-------------------------
+
+$stmt = $pdo->prepare("
+SELECT amount
+FROM incomes
+WHERE month=?
+");
+
+$stmt->execute([$currentMonth]);
+
+$monthlyIncome = $stmt->fetchColumn() ?: 0;
+
+//保存したSavingを読み込み
+$stmt = $pdo->prepare("
+SELECT target_amount
+FROM savings
+WHERE month=?
+");
+
+$stmt->execute([$currentMonth]);
+
+$targetAmount = $stmt->fetchColumn();
+
+if($targetAmount === false){
+    $targetAmount = 0;
+}
+
+//Total spending start------
+$stmt = $pdo->prepare("
+SELECT IFNULL(SUM(amount),0)
+FROM expenses
+WHERE DATE_FORMAT(date,'%Y-%m')=?
+");
+
+$stmt->execute([$currentMonth]);
+
+$totalSpending = $stmt->fetchColumn();
+
+//Budget start------
+$stmt = $pdo->query("
+SELECT category,amount
+FROM budgets
+");
+
+$budgets = [];
+
+while($row = $stmt->fetch(PDO::FETCH_ASSOC)){
+    $budgets[$row['category']] = $row['amount'];
+}
+
+//各カテゴリーの支出
+$stmt = $pdo->prepare("
+SELECT
+c.category_type,
+SUM(e.amount) total
+FROM expenses e
+JOIN categories c
+ON e.category=c.id
+WHERE DATE_FORMAT(e.date,'%Y-%m')=?
+GROUP BY c.category_type
+");
+
+$stmt->execute([$currentMonth]);
+
+$basicCost = 0;
+$entertainmentCost = 0;
+$emergencyCost = 0;
+
+while($row=$stmt->fetch(PDO::FETCH_ASSOC)){
+
+    switch($row['category_type']){
+
+        case 'basic':
+            $basicCost=$row['total'];
+            break;
+
+        case 'entertainment':
+            $entertainmentCost=$row['total'];
+            break;
+
+        case 'emergency':
+            $emergencyCost=$row['total'];
+            break;
+    }
+}
+
+$totalBudget =
+    $budgets['basic']
+    + $budgets['entertainment']
+    + $budgets['emergency'];
+
+//saving goal start------
+$stmt = $pdo->prepare("
+SELECT value
+FROM settings
+WHERE name='saving_goal'
+");
+
+$stmt->execute();
+
+$savingGoal = (int)$stmt->fetchColumn();
+//amount left start------
+//$amountLeft = $monthlyIncome - ($totalSpending + $savingInput);
+$actualSaving = $monthlyIncome - $totalSpending;
+
+if($actualSaving < 0){
+    $actualSaving = 0;
+}
+
+$amountLeft = $monthlyIncome - $totalSpending - $targetAmount;
+
+if($amountLeft < 0){
+    $amountLeft = 0;
+}
+
+
+// $actualSaving = $savingInput + $amountLeft;
+
+if ($actualSaving > $targetAmount) {
+
+    $achievement = "gold";
+
+} elseif ($actualSaving == $targetAmount) {
+
+    $achievement = "silver";
+
+} else {
+
+    $achievement = "failed";
+
+}
+
+
+$savingRate = $monthlyIncome > 0
+    ? round($actualSaving / $monthlyIncome * 100)
+    : 0;
+
+$leftRate = $monthlyIncome > 0
+    ? round($amountLeft / $monthlyIncome * 100)
+    : 0;
+
+//daliy streak start------
+$stmt=$pdo->prepare("
+SELECT value
+FROM settings
+WHERE name='streak'
+");
+
+$stmt->execute();
+
+$streak=$stmt->fetchColumn();
+
+//Greeting start------
+if (!isset($_SESSION['user_id'])) {
+    header("Location: login.php");
+    exit;
+}
+
+$userId = $_SESSION['user_id'];
+
+$stmt=$pdo->prepare("
+SELECT name
+FROM users
+WHERE user_id=?
+");
+
+$stmt->execute([$userId]);
+
+$userName=$stmt->fetchColumn();
+
+//Progress bar start------
+$basicRate = ($budgets['basic'] > 0)
+    ? min(100, round($basicCost / $budgets['basic'] * 100))
+    : 0;
+
+$entertainmentRate = ($budgets['entertainment'] > 0)
+    ? min(100, round($entertainmentCost / $budgets['entertainment'] * 100))
+    : 0;
+
+$emergencyRate = ($budgets['emergency'] > 0)
+    ? min(100, round($emergencyCost / $budgets['emergency'] * 100))
+    : 0;
+
+//Budget Status start------
+function budgetStatus($rate)
+{
+    if ($rate < 70) return "On Track";
+    if ($rate <= 100) return "Watch";
+    return "Over Budget";
+}
+
+//Spending Rate start------
+$spendingRate = $monthlyIncome > 0
+    ? round($totalSpending / $monthlyIncome * 100)
+    : 0;
+
+if (isset($_POST['finish_month'])) {
+
+    $deposit = $actualSaving;
+
+    //analytics_historyへ保存
+    $stmt = $pdo->prepare("
+INSERT INTO analytics_history
+(
+    month,
+    income,
+    spending,
+    saving,
+    basic,
+    entertainment,
+    emergency
+)
+VALUES(?,?,?,?,?,?,?)
+");
+
+$stmt->execute([
+    $currentMonth,
+    $monthlyIncome,
+    $totalSpending,
+    $actualSaving,
+    $basicCost,
+    $entertainmentCost,
+    $emergencyCost
+]);
+
+    // Total Savingsへ追加
+    $stmt = $pdo->prepare("
+        UPDATE settings
+        SET value = value + ?
+        WHERE name='total_savings'
+    ");
+    $stmt->execute([$deposit]);
+
+    // Incomeを0
+    $stmt = $pdo->prepare("
+        UPDATE incomes
+        SET amount = 0
+        WHERE month = ?
+    ");
+    $stmt->execute([$currentMonth]);
+
+    // 今月の支出を削除
+    $stmt = $pdo->prepare("
+        DELETE FROM expenses
+        WHERE DATE_FORMAT(date,'%Y-%m') = ?
+    ");
+    $stmt->execute([$currentMonth]);
+
+$stmt=$pdo->prepare("
+UPDATE savings
+SET
+saving_amount=?,
+achievement=?
+WHERE month=?
+");
+
+$stmt->execute([
+    $actualSaving,
+    $achievement,
+    $currentMonth
+]);
+
+    // Savingを0
+    // $stmt = $pdo->prepare("
+    //     UPDATE savings
+    //     SET saving_amount = 0,
+    //         achievement = 'failed'
+    //     WHERE month = ?
+    // ");
+    // $stmt->execute([$currentMonth]);
+
+    // 月締めフラグ
+    // $stmt = $pdo->prepare("
+    //     UPDATE settings
+    //     SET value = ?
+    //     WHERE name='month_closed'
+    // ");
+    // $stmt->execute([$currentMonth]);
+
+    header("Location: dashboard.php");
+    exit;
+}
+
+
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,31 +366,105 @@
 
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/dashboard.css">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 
 <body>
+  <!-- bootstrap--------nav bar---- -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top px-3">
+
+    <!-- Menu -->
+    <button class="btn btn-success"
+            type="button"
+            data-bs-toggle="offcanvas"
+            data-bs-target="#sidebarMenu">
+        ☰
+    </button>
+
+    <!-- Logo -->
+    <a class="navbar-brand ms-3 fw-bold" href="#">
+        <img src="img/logo.png" width="35" class="me-2">
+        Money Tracker
+    </a>
+
+    <!-- Right Side -->
+    <div class="ms-auto d-flex align-items-center gap-3">
+
+        <div id="google_translate_element"></div>
+
+        <button class="btn btn-outline-success"
+                onclick="goPage('profile.php')">
+            👤 Profile
+        </button>
+
+    </div>
+
+</nav>
+<!-- bootstrap--------nav bar end---- -->
+
 <div class="layout">
 
-  <aside class="sidebar">
-    <h2><img src="img/logo.png" alt="Money Tracker" class="logo-img"> Money Tracker</h2>
-    <a href="dashboard.php">Dashboard</a>
-    <a href="goals.php">Savings Goals</a>
-    <a href="analytics.php">Analytics</a>
-    <a href="achievements.php">Achievements</a>
-  </aside>
 
-  <div class="main">
+  <!-- bootstrap--------sidebar---- -->
+  <div class="offcanvas offcanvas-start"
+     tabindex="-1"
+     id="sidebarMenu">
+
+  <div class="offcanvas-header">
+
+    <h5 class="offcanvas-title">
+      <img src="img/logo.png" alt="Money Tracker" class="logo-img"> Money Tracker
+    </h5>
+
+    <button type="button"
+            class="btn-close"
+            data-bs-dismiss="offcanvas">
+    </button>
+
+  </div>
+  <!-- topbar end -->
+
+  <div class="offcanvas-body">
+
+      <a href="dashboard.php" class="btn btn-outline-success w-100 mb-3">
+          🏠 Dashboard
+      </a>
+
+      <a href="goals.php" class="btn btn-outline-success w-100 mb-3">
+          🎯 Savings Goals
+      </a>
+
+      <a href="analytics.php" class="btn btn-outline-success w-100 mb-3">
+          📊 Analytics
+      </a>
+
+      <a href="achievements.php" class="btn btn-outline-success w-100">
+          🏆 Achievements
+      </a>
+
+  </div>
+
+</div>
+<!-- bootstrap--------sidebar end---- -->
+
+  <!-- <div class="main"> -->
+  <div class="main container-fluid mt-4">
 
     <div class="header">
       <div class="greeting-container">
-        <h2 id="greeting">Hello, Ruby 👋</h2>
-        <div class="header-streak">🔥 <span id="headerStreak">0</span></div>
+        <h2 id="greeting">Hello, <?php echo htmlspecialchars($userName); ?> 👋</h2>
+        <div class="header-streak">🔥 <span id="headerStreak"><?php echo htmlspecialchars($streak); ?></span></div>
+        <form method="POST">
+          <button
+    name="finish_month"
+    class="btn btn-success"
+    <?= $closedMonth == $currentMonth ? 'disabled' : '' ?>>
+    Finish Month
+</button>
+        </form>
       </div>
 
-      <div class="top-actions">
-        <div id="google_translate_element" class="google-translate"></div>
-        <button onclick="goPage('profile.php')">👤 Profile</button>
-      </div>
+    
     </div>
 
     <div class="summary-grid">
@@ -40,7 +473,7 @@
         <div class="icon-box green-bg">💵</div>
         <div class="info">
           <p>Monthly Income</p>
-          <h2 id="monthly-income" class="income">¥200,000</h2>
+          <h2 id="monthly-income" class="income">¥<?php echo number_format($monthlyIncome); ?></h2>
         </div>
       </div>
 
@@ -48,9 +481,9 @@
         <div class="icon-box red-bg">📉</div>
         <div class="info">
           <p>Total Spending</p>
-          <h2 id="total-spending" class="total_spending">¥0</h2>
-          <div class="small-bar"><div id="spendingPercent"></div></div>
-          <span id="spendingRate">0% of income</span>
+          <h2 id="total-spending" class="total_spending">¥<?php echo number_format($totalSpending); ?></h2>
+          <div class="small-bar"><div id="spendingPercent" style="width: <?php echo $spendingRate; ?>%"></div></div>
+          <span id="spendingRate"><?php echo $spendingRate; ?>% of income</span>
         </div>
       </div>
 
@@ -58,9 +491,21 @@
         <div class="icon-box yellow-bg">🐷</div>
         <div class="info">
           <p>This Month Savings</p>
-          <input type="number" id="monthly-savings-input" placeholder="Enter amount">
-          <div class="small-bar"><div id="savingPercent"></div></div>
-          <span id="savingRate">0% of income</span>
+          <!-- <input type="number" id="monthly-savings-input" placeholder="Enter amount"> -->
+           <form method="post">
+
+              <input
+              type="number"
+              name="target_amount"
+              value="<?= $targetAmount ?>">
+
+              <button class="btn btn-success">
+              Save
+              </button>
+
+              </form>
+          <div class="small-bar"><div id="savingPercent" style="width: <?php echo $savingRate; ?>%"></div></div>
+          <span id="savingRate"><?php echo $savingRate; ?>% of income</span>
         </div>
       </div>
 
@@ -68,9 +513,9 @@
         <div class="icon-box blue-bg">💳</div>
         <div class="info">
           <p>Amount Left</p>
-          <h2 id="amount-left" class="amount_left">¥0</h2>
-          <div class="small-bar"><div id="leftPercent"></div></div>
-          <span id="leftRate">0% of income</span>
+          <h2 id="amount-left" class="amount_left">¥<?php echo number_format($amountLeft); ?></h2>
+          <div class="small-bar"><div id="leftPercent" style="width: <?php echo $leftRate; ?>%"></div></div>
+          <span id="leftRate"><?php echo $leftRate; ?>% of income</span>
         </div>
       </div>
 
@@ -103,15 +548,15 @@
 
         <div class="budget-header">
             <span>🏠 Basic Cost</span>
-            <span id="basicCostAmount">¥0 / ¥100,000</span>
+            <span id="basicCostAmount">¥<?php echo number_format($basicCost); ?> / ¥<?php echo number_format($budgets['basic']); ?></span>
         </div>
 
         <div class="bar">
-            <div id="basicFill" class="green-fill"></div>
+            <div id="basicFill" class="green-fill" style="width: <?php echo $basicRate; ?>%"></div>
         </div>
 
         <div id="basicStatus" class="budget-status">
-            On Track
+            <?php echo budgetStatus($basicRate); ?>
         </div>
 
     </div>
@@ -122,15 +567,15 @@
 
         <div class="budget-header">
             <span>🎮 Entertainment</span>
-            <span id="entertainmentAmount">¥0 / ¥50,000</span>
+            <span id="entertainmentAmount">¥<?php echo number_format($entertainmentCost); ?> / ¥<?php echo number_format($budgets['entertainment']); ?></span>
         </div>
 
         <div class="bar">
-            <div id="entertainmentFill" class="pink-fill"></div>
+            <div id="entertainmentFill" class="pink-fill" style="width: <?php echo $entertainmentRate; ?>%"></div>
         </div>
 
         <div id="entertainmentStatus" class="budget-status">
-            On Track
+            <?php echo budgetStatus($entertainmentRate); ?>
         </div>
 
     </div>
@@ -141,15 +586,15 @@
 
         <div class="budget-header">
             <span>⚠️ Emergency</span>
-            <span id="emergencyAmount">¥0 / ¥50,000</span>
+            <span id="emergencyAmount">¥<?php echo number_format($emergencyCost); ?> / ¥<?php echo number_format($budgets['emergency']); ?></span>
         </div>
 
         <div class="bar">
-            <div id="emergencyFill" class="red-fill"></div>
+            <div id="emergencyFill" class="red-fill" style="width: <?php echo $emergencyRate; ?>%"></div>
         </div>
 
         <div id="emergencyStatus" class="budget-status">
-            On Track
+            <?php echo budgetStatus($emergencyRate); ?>
         </div>
 
     </div>
@@ -162,213 +607,22 @@
 </div>
 
 <script>
-function goPage(page){
-  window.location.href = page;
-}
-
-function formatYen(n){
-  return "¥" + Number(n).toLocaleString();
-}
-
-function percent(part, total){
-  if (total <= 0) return 0;
-  return Math.round((part / total) * 100);
-}
-
-function updateGreeting(){
-  const firstName = localStorage.getItem("profileFirstName") || "Ruby";
-  const lastName = localStorage.getItem("profileLastName") || "";
-
-  document.getElementById("greeting").textContent =
-    `Hello, ${firstName} ${lastName} 👋`;
+function goPage(page) {
+    window.location.href = page;
 }
 
 function googleTranslateElementInit() {
-  new google.translate.TranslateElement({
-    pageLanguage: "en",
-    includedLanguages: "en,ja,my,ko,zh-CN,th,vi,id,ne",
-    layout: google.translate.TranslateElement.InlineLayout.SIMPLE
-  }, "google_translate_element");
+    new google.translate.TranslateElement({
+        pageLanguage: "en",
+        includedLanguages: "en,ja,my,ko,zh-CN,th,vi,id,ne",
+        layout: google.translate.TranslateElement.InlineLayout.SIMPLE
+    }, "google_translate_element");
 }
-
-function updateStreak() {
-  let streak = Number(localStorage.getItem("streak")) || 0;
-  let lastVisit = localStorage.getItem("lastVisit");
-  const today = new Date().toDateString();
-
-  if (!lastVisit) {
-    streak = 1;
-  } else {
-    const diffDays = Math.floor(
-      (new Date(today) - new Date(lastVisit)) / (1000 * 60 * 60 * 24)
-    );
-
-    if (diffDays === 1) streak += 1;
-    else if (diffDays > 1) streak = 1;
-  }
-
-  localStorage.setItem("streak", streak);
-  localStorage.setItem("lastVisit", today);
-  document.getElementById("headerStreak").textContent = streak;
-}
-
-function updateStatus(id, rate) {
-  const el = document.getElementById(id);
-
-  if (rate < 70) {
-    el.textContent = "On Track";
-    el.className = "budget-status status-good";
-  } else if (rate <= 100) {
-    el.textContent = "Watch";
-    el.className = "budget-status status-watch";
-  } else {
-    el.textContent = "Over Budget";
-    el.className = "budget-status status-danger";
-  }
-}
-
-function updateBudgetDisplays() {
-  const basicBudget = Number(localStorage.getItem("monthlyBudget")) || 100000;
-  const entertainmentBudget = Number(localStorage.getItem("entertainmentBudget")) || 50000;
-  const emergencyBudget = Number(localStorage.getItem("emergencyBudget")) || 50000;
-
-  const basicCost = Number(localStorage.getItem("dashboardBasicCost")) || 0;
-  const entertainmentCost = Number(localStorage.getItem("dashboardEntertainmentCost")) || 0;
-  const emergencyCost = Number(localStorage.getItem("dashboardEmergencyCost")) || 0;
-
-  const basicRate = percent(basicCost, basicBudget);
-  const entertainmentRate = percent(entertainmentCost, entertainmentBudget);
-  const emergencyRate = percent(emergencyCost, emergencyBudget);
-
-  document.getElementById("basicCostAmount").textContent =
-    `${formatYen(basicCost)} / ${formatYen(basicBudget)}`;
-
-  document.getElementById("entertainmentAmount").textContent =
-    `${formatYen(entertainmentCost)} / ${formatYen(entertainmentBudget)}`;
-
-  document.getElementById("emergencyAmount").textContent =
-    `${formatYen(emergencyCost)} / ${formatYen(emergencyBudget)}`;
-
-  document.getElementById("basicFill").style.width = Math.min(basicRate, 100) + "%";
-  document.getElementById("entertainmentFill").style.width = Math.min(entertainmentRate, 100) + "%";
-  document.getElementById("emergencyFill").style.width = Math.min(emergencyRate, 100) + "%";
-
-  updateStatus("basicStatus", basicRate);
-  updateStatus("entertainmentStatus", entertainmentRate);
-  updateStatus("emergencyStatus", emergencyRate);
-
-  updateFocusCard();
-}
-
-function updateMoneySummary() {
-  const income = Number(localStorage.getItem("monthlyIncome")) || 200000;
-
-  const basicCost = Number(localStorage.getItem("dashboardBasicCost")) || 0;
-  const entertainmentCost = Number(localStorage.getItem("dashboardEntertainmentCost")) || 0;
-  const emergencyCost = Number(localStorage.getItem("dashboardEmergencyCost")) || 0;
-
-  const totalSpending = basicCost + entertainmentCost + emergencyCost;
-  let monthlySavings = Number(localStorage.getItem("dashboardSavedAmount")) || 0;
-
-  let amountLeft = income - totalSpending - monthlySavings;
-
-  if (amountLeft < 0) {
-    monthlySavings += amountLeft;
-    if (monthlySavings < 0) monthlySavings = 0;
-    amountLeft = 0;
-  }
-
-  const totalSavings = monthlySavings + amountLeft;
-
-  const spendingRate = percent(totalSpending, income);
-  const savingRate = percent(monthlySavings, income);
-  const leftRate = percent(amountLeft, income);
-
-  document.getElementById("monthly-income").textContent = formatYen(income);
-  document.getElementById("total-spending").textContent = formatYen(totalSpending);
-  document.getElementById("amount-left").textContent = formatYen(amountLeft);
-  document.getElementById("monthly-savings-input").value = monthlySavings;
-
-  document.getElementById("spendingPercent").style.width = Math.min(spendingRate, 100) + "%";
-  document.getElementById("savingPercent").style.width = Math.min(savingRate, 100) + "%";
-  document.getElementById("leftPercent").style.width = Math.min(leftRate, 100) + "%";
-
-  document.getElementById("spendingRate").textContent = `${spendingRate}% of income`;
-  document.getElementById("savingRate").textContent = `${savingRate}% of income`;
-  document.getElementById("leftRate").textContent = `${leftRate}% of income`;
-
-  localStorage.setItem("dashboardTotalSpending", totalSpending);
-  localStorage.setItem("dashboardAmountLeft", amountLeft);
-  localStorage.setItem("dashboardSavedAmount", monthlySavings);
-  localStorage.setItem("totalSavings", totalSavings);
-}
-
-function updateFocusCard() {
-  const categories = [
-    {
-      name: "Basic Cost",
-      cost: Number(localStorage.getItem("dashboardBasicCost")) || 0,
-      budget: Number(localStorage.getItem("monthlyBudget")) || 100000
-    },
-    {
-      name: "Entertainment",
-      cost: Number(localStorage.getItem("dashboardEntertainmentCost")) || 0,
-      budget: Number(localStorage.getItem("entertainmentBudget")) || 50000
-    },
-    {
-      name: "Emergency",
-      cost: Number(localStorage.getItem("dashboardEmergencyCost")) || 0,
-      budget: Number(localStorage.getItem("emergencyBudget")) || 50000
-    }
-  ];
-
-  let worst = categories[0];
-
-  categories.forEach(cat => {
-    if (percent(cat.cost, cat.budget) > percent(worst.cost, worst.budget)) {
-      worst = cat;
-    }
-  });
-
-  const over = worst.cost - worst.budget;
-  const focusText = document.getElementById("focusText");
-  const focusCard = document.getElementById("focus-card");
-
-  if (over > 0) {
-    focusCard.className = "focus-card danger-focus";
-    focusText.textContent = `${worst.name} is over budget by ${formatYen(over)}.`;
-  } else {
-    focusCard.className = "focus-card good-focus";
-    focusText.textContent = `You're on track. Keep your spending under control.`;
-  }
-}
-
-if (!localStorage.getItem("monthlySavingGoal")) {
-  localStorage.setItem("monthlySavingGoal", 50000);
-}
-
-document.addEventListener("DOMContentLoaded", function(){
-  updateGreeting();
-  updateStreak();
-  updateBudgetDisplays();
-  updateMoneySummary();
-
-  const savingsInput = document.getElementById("monthly-savings-input");
-
-  savingsInput.addEventListener("input", function(){
-    localStorage.setItem("dashboardSavedAmount", this.value);
-    updateMoneySummary();
-  });
-});
-
-window.addEventListener("storage", function(e) {
-  updateGreeting();
-  updateBudgetDisplays();
-  updateMoneySummary();
-});
 </script>
 
 <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+<!-- bootstrap-------- -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>
 </html>

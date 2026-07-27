@@ -2,8 +2,37 @@
 require_once 'db.php';
 $pdo = getDb();
 
+// Entertainment Budget
+$stmt = $pdo->prepare("
+    SELECT amount
+    FROM budgets
+    WHERE category='entertainment'
+");
+$stmt->execute();
+
+$entertainmentBudget = $stmt->fetchColumn();
+
 // ── Handle add/edit/delete (POST) ─────────────────────────────────────────────
 $action = $_POST['action'] ?? '';
+
+if (
+    $_SERVER['REQUEST_METHOD'] == 'POST' &&
+    ($_POST['action'] ?? '') == 'save_budget'
+) {
+
+    $budget = (int)$_POST['budget'];
+
+    $stmt = $pdo->prepare("
+        UPDATE budgets
+        SET amount=?
+        WHERE category='entertainment'
+    ");
+
+    $stmt->execute([$budget]);
+
+    header("Location: entertainment.php");
+    exit;
+}
 
 if ($action === 'add') {
     $stmt = $pdo->prepare("INSERT INTO expenses (name, category, date, amount) VALUES (?, ?, ?, ?)");
@@ -100,22 +129,14 @@ function getCategoryLabel(array $categories, string $id): string {
 <title>Entertainment – FOURCE</title>
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/entertainment.css"> <!-- reuse same CSS -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
  
 <body>
- 
-<div class="layout">
- 
-<!-- Sidebar -->
-<aside class="sidebar">
-   <h2><img src="img/logo.png" alt="Money Tracker" class="logo-img"> Money Tracker</h2>
-    <a href="dashboard.php" class="active">Dashboard</a>
-    <a href="goals.php">Savings Goals</a>
-    <a href="analytics.php">Analysis</a>
-    <a href="achievements.php">Achievements</a>
-  </aside>
- 
-<div class="main">
+<?php include 'includes/navbar.php'; ?>
+  <?php include 'includes/sidebar.php'; ?>
+
+<div class="main container-fluid mt-4">
   
  
 <?php if ($message): ?>
@@ -197,7 +218,7 @@ function getCategoryLabel(array $categories, string $id): string {
      ADD / EDIT MODAL
 ══════════════════════════════════════════════════════════════════════════ -->
 <div id="modal-overlay" class="modal-overlay">
-  <div class="modal" id="modal-box" onclick="event.stopPropagation()">
+  <div class="custom-modal" id="modal-box" onclick="event.stopPropagation()">
     <h2 id="modal-title">Add Expense</h2>
  
     <form method="POST" action="entertainment.php">
@@ -240,7 +261,7 @@ function getCategoryLabel(array $categories, string $id): string {
      DELETE CONFIRM MODAL
 ══════════════════════════════════════════════════════════════════════════ -->
 <div id="del-overlay" class="modal-overlay">
-  <div class="modal modal-sm" onclick="event.stopPropagation()">
+  <div class="custom-modal modal-sm" onclick="event.stopPropagation()">
     <h2>Delete Expense?</h2>
     <p>This action cannot be undone.</p>
     <form method="POST" action="entertainment.php">
@@ -257,18 +278,48 @@ function getCategoryLabel(array $categories, string $id): string {
      MONTHLY BUDGET MODAL
 ══════════════════════════════════════════════════════════════════════════ -->
 <div id="budget-overlay" class="modal-overlay">
-  <div class="modal" id="budget-modal" onclick="event.stopPropagation()">
+  <div class="custom-modal" id="budget-modal" onclick="event.stopPropagation()">
     <h2>Set Monthly Budget</h2>
     <p style="color: #666; margin-bottom: 20px;">Define your total monthly budget for entertainment</p>
     
-    <label>Monthly Budget (¥)
-      <input type="number" id="budget-input" placeholder="50000" min="1" step="1000" required>
+    <form method="post">
+
+    <input
+        type="hidden"
+        name="action"
+        value="save_budget">
+
+    <label>
+    Monthly Budget (¥)
+
+    <input
+        type="number"
+        name="budget"
+        id="budget-input"
+        value="<?= $entertainmentBudget ?>">
+
     </label>
-    
+
     <div class="modal-actions">
-      <button type="button" class="btn-cancel" onclick="closeBudgetModal()">Cancel</button>
-      <button type="button" class="btn-save" onclick="saveBudget()">Save Budget</button>
+
+    <button
+    type="button"
+    class="btn-cancel"
+    onclick="closeBudgetModal()">
+    Cancel
+    </button>
+
+    <button
+    type="submit"
+    class="btn-save">
+    Save
+    </button>
+
     </div>
+
+</form>
+    
+  
   </div>
 </div>
 
@@ -296,8 +347,8 @@ budgetOverlay.addEventListener('click', function(e) {
 
 // ── Budget modal ─────────────────────────────────────────────────────────────
 function openBudgetModal() {
-  const saved = localStorage.getItem('entertainmentBudget');
-  document.getElementById('budget-input').value = saved || '50000';
+  // const saved = localStorage.getItem('entertainmentBudget');
+  // document.getElementById('budget-input').value = saved || '50000';
   budgetOverlay.style.display = 'flex';
 }
 
@@ -305,16 +356,16 @@ function closeBudgetModal() {
   budgetOverlay.style.display = 'none';
 }
 
-function saveBudget() {
-  const budget = document.getElementById('budget-input').value;
-  if (!budget || budget <= 0) {
-    alert('Please enter a valid budget amount');
-    return;
-  }
-  localStorage.setItem('entertainmentBudget', budget);
-  alert('✅ Budget saved: ¥' + Number(budget).toLocaleString());
-  closeBudgetModal();
-}
+// function saveBudget() {
+//   const budget = document.getElementById('budget-input').value;
+//   if (!budget || budget <= 0) {
+//     alert('Please enter a valid budget amount');
+//     return;
+//   }
+//   localStorage.setItem('entertainmentBudget', budget);
+//   alert('✅ Budget saved: ¥' + Number(budget).toLocaleString());
+//   closeBudgetModal();
+// }
 
 function openModal() {
   document.getElementById('modal-title').textContent = 'Add Expense';
@@ -389,6 +440,6 @@ if (toast) setTimeout(() => toast.style.opacity = '0', 3000);
 var entertainmentCost = <?= array_sum(array_column($expenses, 'amount')) ?>;
 localStorage.setItem('dashboardEntertainmentCost', entertainmentCost);
 </script>
-
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

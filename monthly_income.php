@@ -1,4 +1,74 @@
-<?php ?>
+<?php 
+session_start();
+require_once "db.php";
+
+$pdo = getDb();
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+    $amount = (int)$_POST['income'];
+    $month = date('Y-m');
+
+    $stmt = $pdo->prepare("
+    SELECT COUNT(*)
+    FROM incomes
+    WHERE month=?
+    ");
+
+    $stmt->execute([$month]);
+
+    if ($stmt->fetchColumn()) {
+
+        $stmt = $pdo->prepare("
+        UPDATE incomes
+        SET amount=?
+        WHERE month=?
+        ");
+
+        $stmt->execute([$amount,$month]);
+
+    } else {
+
+        $stmt = $pdo->prepare("
+        INSERT INTO incomes(amount,month)
+        VALUES(?,?)
+        ");
+
+        $stmt->execute([$amount,$month]);
+    }
+
+    header("Location: monthly_income.php");
+    exit;
+}
+
+
+$currentMonth = date('Y-m');
+
+// Get current month's income
+$stmt = $pdo->prepare("
+    SELECT amount
+    FROM incomes
+    WHERE month = ?
+    LIMIT 1
+");
+
+$stmt->execute([$currentMonth]);
+
+$currentIncome = $stmt->fetchColumn();
+
+if ($currentIncome === false) {
+    $currentIncome = 0;
+}
+//chart data for last 12 months
+$stmt = $pdo->query("
+SELECT month, amount
+FROM incomes
+ORDER BY month DESC
+LIMIT 12
+");
+
+$chartData = array_reverse($stmt->fetchAll(PDO::FETCH_ASSOC));
+
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,35 +77,30 @@
 
 <!-- Link CSS -->
 <link rel="stylesheet" href="css/style.css">
-<link rel="stylesheet" href="css/dashboard.css">
+<link rel="stylesheet" href="css/monthly_income.css">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+
 </head>
 
 <body>
-<div class="layout">
-  <aside class="sidebar">
-    <h2><img src="img/logo.png" alt="Money Tracker" class="logo-img"> Money Tracker</h2>
-    <a id="navDashboard" href="dashboard.php">Dashboard</a>
-    <a id="navGoals" href="goals.php">Savings Goals</a>
-    <a id="navAnalytics" href="analytics.php">Analytics</a>
-    <a id="navAchievements" href="achievements.php">Achievements</a>
-  </aside>
-<div class="main">
+  <?php include 'includes/navbar.php'; ?>
+  <?php include 'includes/sidebar.php'; ?>
+
+<div class="main container-fluid mt-4">
+
+
 
   <div class="header">
     <div>
       <h2 id="pageHeading">Monthly Income</h2>
       <p id="pageSubtitle" class="subtitle">Record your income and see the last 12 months in a chart.</p>
     </div>
-    <div class="top-actions">
-      <div id="google_translate_element" class="google-translate"></div>
-      <button id="backButton" onclick="goPage('dashboard.php')">← Back to Dashboard</button>
-    </div>
   </div>
 
   <div class="card monthly-income-panel">
     <div class="panel-left">
       <p id="panelLabel" class="panel-label">Monthly Income</p>
-      <h1 id="currentIncome" class="hero-income">¥0</h1>
+      <h1 class="hero-income"> ¥<?= number_format($currentIncome) ?></h1>
       <p id="panelNote" class="panel-note">Enter your latest monthly income and track the last 12 months of progress in the chart below.</p>
     </div>
     <div class="panel-right">
@@ -44,9 +109,21 @@
         <p id="updateSubtitle" class="subtitle">Enter your salary or earnings for this month.</p>
         <div class="income-input-row">
           <label id="amountLabel" for="incomeValue">Amount</label>
-          <input id="incomeValue" type="text" placeholder="200000" />
-        </div>
-        <button id="saveIncome" class="primary-button">Save income</button>
+            
+      </div>
+        <form method="post">
+
+<input
+    type="number"
+    name="income"
+    value="<?= htmlspecialchars($currentIncome) ?>"
+>
+
+<button class="primary-button">
+    Save Income
+</button>
+
+</form>
       </div>
     </div>
   </div>
@@ -59,13 +136,12 @@
       </div>
       <span id="chartSubtitle">Updated instantly</span>
     </div>
-    <canvas id="incomeChart" width="700" height="320"></canvas>
-  </div>
+    <canvas id="incomeChart"></canvas>  </div>
 
 </div>
 </div>
 
-<script>
+<!-- <script>
 function goPage(page){
   window.location.href = page;
 }
@@ -132,8 +208,12 @@ function renderChart(history){
   var ctx = canvas.getContext('2d');
   var width = canvas.width;
   var height = canvas.height;
-  var padding = 50;
-  var barWidth = (width - padding * 2) / history.length * 0.6;
+  //var padding = 50;
+  var paddingLeft = 90;
+  var paddingBottom = 50;
+  var paddingTop = 40;
+  var paddingRight = 30;
+  var barWidth = (width - paddingLeft - paddingRight) / history.length * 0.6;
   var maxIncome = Math.max.apply(null, history.map(function(item){ return item.income; }).concat(100));
   ctx.clearRect(0,0,width,height);
 
@@ -141,10 +221,10 @@ function renderChart(history){
   ctx.strokeStyle = '#e5e7eb';
   ctx.lineWidth = 1;
   for(var row=0; row<=4; row++){
-    var y = padding + row * ((height - padding * 2) / 4);
+    var y = paddingTop + row * ((height - paddingTop - paddingBottom) / 4);
     ctx.beginPath();
-    ctx.moveTo(padding, y);
-    ctx.lineTo(width - padding, y);
+    ctx.moveTo(paddingLeft, y);
+    ctx.lineTo(width - paddingRight, y);
     ctx.stroke();
   }
 
@@ -152,9 +232,9 @@ function renderChart(history){
   ctx.strokeStyle = '#94a3b8';
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.moveTo(padding, padding);
-  ctx.lineTo(padding, height - padding);
-  ctx.lineTo(width - padding, height - padding);
+  ctx.moveTo(paddingLeft, paddingTop);
+  ctx.lineTo(paddingLeft, height - paddingBottom);
+  ctx.lineTo(width - paddingRight, height - paddingBottom);
   ctx.stroke();
 
   // y labels
@@ -162,21 +242,21 @@ function renderChart(history){
   ctx.font = '13px Segoe UI';
   ctx.textAlign = 'right';
   for(var row=0; row<=4; row++){
-    var y = padding + row * ((height - padding * 2) / 4);
+    var y = paddingTop + row * ((height - paddingTop - paddingBottom) / 4);
     var value = Math.round(maxIncome - (maxIncome / 4) * row);
-    ctx.fillText(formatYen(value), padding - 10, y + 4);
+    ctx.fillText(formatYen(value), paddingLeft   - 10, y + 4);
   }
 
   // bars
   history.forEach(function(item, index){
-    var x = padding + (index + 0.5) * ((width - padding * 2) / history.length) - barWidth / 2;
-    var barHeight = (item.income / maxIncome) * (height - padding * 2);
-    var y = height - padding - barHeight;
+    var x = paddingLeft + (index + 0.5) * ((width - paddingLeft - paddingRight) / history.length) - barWidth / 2;
+    var barHeight = (item.income / maxIncome) * (height - paddingTop - paddingBottom);
+    var y = height - paddingBottom   - barHeight;
     ctx.fillStyle = '#22c55e';
     ctx.fillRect(x, y, barWidth, barHeight);
     ctx.fillStyle = '#0f172a';
     ctx.textAlign = 'center';
-    ctx.fillText(item.month, x + barWidth / 2, height - padding + 20);
+    ctx.fillText(item.month, x + barWidth / 2, height - paddingBottom    + 20);
     ctx.fillText(formatYen(item.income), x + barWidth / 2, y - 10);
   });
 }
@@ -232,7 +312,47 @@ window.addEventListener('DOMContentLoaded', function(){
     alert('Monthly income updated.');
   });
 });
+</script> -->
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+const incomeHistory = <?= json_encode($chartData) ?>;
+
+const labels = incomeHistory.map(item => {
+    const d = new Date(item.month + '-01');
+    return d.toLocaleString('en-US', { month: 'short' });
+});
+
+const amounts = incomeHistory.map(item => Number(item.amount));
+
+const ctx = document.getElementById('incomeChart').getContext('2d');
+
+new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: labels,
+        datasets: [{
+            data: amounts,
+            backgroundColor: '#22c55e',
+            borderRadius: 8
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        aspectRatio: 2.8,
+        plugins: {
+            legend: {
+                display: false
+            }
+        }
+    }
+});
+
+
 </script>
-<script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

@@ -1,0 +1,356 @@
+/* =========================================
+   MONTHLY INCOME PAGE
+========================================= */
+
+.main{
+    max-width:1300px;
+    margin:auto;
+    padding:30px;
+}
+
+/* =========================================
+   HEADER
+========================================= */
+
+.header{
+    margin-bottom:35px;
+}
+
+.header h2{
+    font-size:48px;
+    font-weight:700;
+    color:#0f172a;
+    margin-bottom:10px;
+}
+
+.subtitle{
+    color:#64748b;
+    font-size:18px;
+}
+
+/* =========================================
+   TOP PANEL
+========================================= */
+
+.monthly-income-panel{
+
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+
+    gap:40px;
+
+    padding:40px;
+
+    margin-bottom:35px;
+
+    background:linear-gradient(135deg,#34d399,#16a34a);
+
+    border-radius:24px;
+
+    box-shadow:0 12px 35px rgba(0,0,0,.12);
+
+}
+
+.panel-left{
+
+    flex:1;
+
+}
+
+.panel-label{
+
+    font-size:15px;
+
+    letter-spacing:2px;
+
+    text-transform:uppercase;
+
+    opacity:.9;
+
+}
+
+.hero-income{
+
+    font-size:64px;
+
+    font-weight:700;
+
+    margin:18px 0;
+
+    color:white;
+
+}
+
+.panel-note{
+
+    color:rgba(255,255,255,.9);
+
+    font-size:17px;
+
+    line-height:1.7;
+
+    max-width:500px;
+
+}
+
+.panel-right{
+
+    width:360px;
+
+}
+
+/* =========================================
+   INPUT CARD
+========================================= */
+
+.income-input-card{
+
+    background:white;
+
+    border-radius:22px;
+
+    padding:30px;
+
+    box-shadow:0 12px 30px rgba(0,0,0,.12);
+
+}
+
+.income-input-card h3{
+
+    margin-bottom:8px;
+
+    font-size:28px;
+
+}
+
+.income-input-row{
+
+    margin:22px 0;
+
+}
+
+.income-input-row label{
+
+    display:block;
+
+    margin-bottom:8px;
+
+    font-weight:600;
+
+    color:#475569;
+
+}
+
+.income-input-row input{
+
+    width:100%;
+
+    padding:15px 18px;
+
+    border:2px solid #e2e8f0;
+
+    border-radius:14px;
+
+    font-size:20px;
+
+    transition:.25s;
+
+}
+
+.income-input-row input:focus{
+
+    outline:none;
+
+    border-color:#22c55e;
+
+    box-shadow:0 0 0 4px rgba(34,197,94,.15);
+
+}
+
+.primary-button{
+
+    width:100%;
+
+    border:none;
+
+    border-radius:14px;
+
+    padding:15px;
+
+    background:#22c55e;
+
+    color:white;
+
+    font-size:18px;
+
+    font-weight:bold;
+
+    cursor:pointer;
+
+    transition:.25s;
+
+}
+
+.primary-button:hover{
+
+    background:#16a34a;
+
+    transform:translateY(-2px);
+
+}
+
+/* =========================================
+   CHART
+========================================= */
+
+.chart-card{
+
+    background:white;
+
+    border-radius:24px;
+
+    padding:30px;
+
+    box-shadow:0 12px 30px rgba(0,0,0,.08);
+    height:420px;
+
+}
+
+.chart-header{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    margin-bottom:25px;
+
+}
+
+.chart-header h3{
+
+    font-size:28px;
+
+    margin:0;
+
+}
+
+.chart-header .subtitle{
+
+    margin-top:5px;
+
+}
+
+#chartSubtitle{
+
+    background:#dcfce7;
+
+    color:#15803d;
+
+    padding:8px 18px;
+
+    border-radius:30px;
+
+    font-size:14px;
+
+    font-weight:bold;
+
+}
+
+canvas{
+    width:100%;
+    background:#fafafa;
+    border-radius:18px;
+}
+
+#incomeChart{
+    width:100% !important;
+    height:280px !important;
+    max-height:280px;
+}
+
+/* =========================================
+   CARD ANIMATION
+========================================= */
+
+.monthly-income-panel,
+.chart-card,
+.income-input-card{
+
+    transition:.3s;
+
+}
+
+.monthly-income-panel:hover,
+.chart-card:hover,
+.income-input-card:hover{
+
+    transform:translateY(-4px);
+
+    box-shadow:0 20px 40px rgba(0,0,0,.12);
+
+}
+
+/* =========================================
+   RESPONSIVE
+========================================= */
+
+@media(max-width:992px){
+
+.monthly-income-panel{
+
+    flex-direction:column;
+
+}
+
+.panel-right{
+
+    width:100%;
+
+}
+
+.hero-income{
+
+    font-size:48px;
+
+}
+
+}
+
+@media(max-width:768px){
+
+.main{
+
+    padding:20px;
+
+}
+
+.header h2{
+
+    font-size:38px;
+
+}
+
+.chart-header{
+
+    flex-direction:column;
+
+    align-items:flex-start;
+
+    gap:15px;
+
+}
+
+}
+
+/* //chart */
+.chart-card{
+    padding:30px;
+}
+
+#incomeChart{
+    max-height:300px;
+}
+

@@ -1,3 +1,25 @@
+<?php
+require_once 'db.php';
+
+ 
+$pdo = getDb();
+ 
+$stmt = $pdo->query("SELECT * FROM goals ORDER BY slot_no");
+$goals = $stmt->fetchAll(PDO::FETCH_ASSOC);
+ 
+$stmt = $pdo->prepare("SELECT value FROM settings WHERE name='total_savings'");
+$stmt->execute();
+$totalSavings = $stmt->fetchColumn() ?: 0;
+ 
+$stmt = $pdo->query("
+SELECT *
+FROM goal_collection
+ORDER BY completed_at DESC
+");
+ 
+$collections = $stmt->fetchAll(PDO::FETCH_ASSOC);
+?>
+ 
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -5,19 +27,14 @@
   <title>貯金目標</title>
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/goals.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
  
 <body>
-<div class="layout">
-  <aside class="sidebar">
-    <h2>💸 FOURCE</h2>
-    <a href="dashboard.php">Dashboard</a>
-    <a href="goals.php">Savings Goals</a>
-    <a href="analytics.php">Analysis</a>
-    <a href="achievements.php">Achievements</a>
-  </aside>
- 
-  <main class="main">
+  <?php include 'includes/navbar.php'; ?>
+  <?php include 'includes/sidebar.php'; ?>
+
+<div class="main container-fluid mt-4">
     <div class="goals-header">
       <div>
         <h1>Savings Goals</h1>
@@ -32,7 +49,7 @@
     <div class="goals-grid" id="goalsGrid"></div>
  
     <div id="goalCollection" class="goal-collection"></div>
-  </main>
+    
 </div>
  
 <div id="goalModal" class="modal">
@@ -55,39 +72,25 @@
 </div>
  
 <script>
-let selectedIndex = null;
+let goals = <?= json_encode($goals) ?>;
  
-let goals = JSON.parse(localStorage.getItem("goals")) || [
-  null,
-  null,
-  null
-];
+let collections = <?= json_encode($collections) ?>;
+ 
+let selectedIndex = null;
  
 function yen(n) {
   return "¥" + Number(n).toLocaleString();
 }
  
-function getDashboardMoney() {
-  let amountLeft = Number(localStorage.getItem("dashboardAmountLeft")) || 0;
-  let monthSaving = Number(localStorage.getItem("dashboardSavedAmount")) || 0;
-  let totalSavings = Number(localStorage.getItem("totalSavings")) || 0;
- 
-  return {
-    amountLeft,
-    monthSaving,
-    totalSavings
-  };
+function getDashboardMoney(){
+
+    return {
+        totalSavings: <?= (int)$totalSavings ?>
+    };
+
 }
  
-function saveDashboardMoney(amountLeft, monthSaving, totalSavings) {
-  amountLeft = Math.max(0, Number(amountLeft) || 0);
-  monthSaving = Math.max(0, Number(monthSaving) || 0);
-  totalSavings = Math.max(0, Number(totalSavings) || 0);
- 
-  localStorage.setItem("dashboardAmountLeft", amountLeft);
-  localStorage.setItem("dashboardSavedAmount", monthSaving);
-  localStorage.setItem("totalSavings", totalSavings);
-}
+
  
 function renderGoals() {
   const grid = document.getElementById("goalsGrid");
@@ -96,7 +99,7 @@ function renderGoals() {
   grid.innerHTML = "";
  
   goals.forEach((goal, index) => {
-    if (goal === null) {
+    if (goal.name === null) {
       grid.innerHTML += `
         <div class="empty-goal" onclick="openGoalModal(${index})">
           <div class="plus">+</div>
@@ -105,7 +108,7 @@ function renderGoals() {
         </div>
       `;
     } else {
-      const target = Number(goal.target) || 0;
+      const target = Number(goal.target_amount) || 0;
       const percent = target > 0
         ? Math.min((money.totalSavings / target) * 100, 100)
         : 0;
@@ -129,9 +132,8 @@ function renderGoals() {
           <p class="percent">${Math.round(percent)}% Achieved</p>
  
           <div class="goal-money-note">
-            <small>Left to Spend: ${yen(money.amountLeft)}</small>
-            <small>This Month Savings: ${yen(money.monthSaving)}</small>
-          </div>
+            <small>Total Savings : ${yen(money.totalSavings)}</small>
+        </div>
  
           <button class="edit-btn" onclick="openGoalModal(${index})">
             Edit Goal
@@ -148,54 +150,61 @@ function renderGoals() {
   });
 }
  
-function getGoalCollection() {
-  return JSON.parse(localStorage.getItem("goalCollection")) || [];
-}
- 
 function renderCollection() {
-  const collection = getGoalCollection();
-  const container = document.getElementById("goalCollection");
  
-  if (collection.length === 0) {
+    const container =
+        document.getElementById("goalCollection");
+    if(collections.length === 0){
+        container.innerHTML = `
+            <div class="collection-empty">
+                <p>No completed goals yet.</p>
+            </div>
+        `;
+        return;
+    }
     container.innerHTML = `
-      <div class="collection-empty">
-        <p>No completed goals yet.</p>
-      </div>
-    `;
-    return;
-  }
- 
-  container.innerHTML = `
-    <h2>Completed Goals</h2>
- 
-    <div class="collection-grid">
-      ${collection.map((item, index) => `
-        <div class="collection-card">
-          ${item.image ? `<img src="${item.image}" alt="completed goal">` : ""}
- 
-          <h3>${item.name}</h3>
-          <p>Amount: ${yen(item.target)}</p>
-          <p>Completed: ${item.date}</p>
- 
-          <button class="delete-btn" onclick="deleteCollectionGoal(${index})">
-            Delete
-          </button>
+        <h2>Completed Goals</h2>
+        <div class="collection-grid">
+        ${collections.map(item => `
+            <div class="collection-card">
+                ${item.image
+                    ? `<img src="${item.image}">`
+                    : ""}
+                <h3>${item.name}</h3>
+                <p>Amount : ${yen(item.target_amount)}</p>
+                <p>
+                    Completed :
+                    ${item.completed_at}
+                </p>
+                <button
+                    class="delete-btn"
+                    onclick="deleteCollectionGoal(${item.id})">
+                    Delete
+                </button>
+            </div>
+        `).join("")}
         </div>
-      `).join("")}
-    </div>
-  `;
+    `;
 }
+ 
  
 function openGoalModal(index) {
   selectedIndex = index;
  
-  if (goals[index] !== null) {
-    document.getElementById("goalName").value = goals[index].name;
-    document.getElementById("goalTarget").value = goals[index].target;
-  } else {
+  if (goals[index].name !== null) {
+
+    document.getElementById("goalName").value =
+        goals[index].name;
+
+    document.getElementById("goalTarget").value =
+        goals[index].target_amount;
+
+} else {
+
     document.getElementById("goalName").value = "";
     document.getElementById("goalTarget").value = "";
-  }
+
+}
  
   document.getElementById("goalImage").value = "";
   document.getElementById("goalModal").style.display = "flex";
@@ -205,150 +214,175 @@ function closeGoalModal() {
   document.getElementById("goalModal").style.display = "none";
 }
  
-function saveGoal() {
-  const name = document.getElementById("goalName").value.trim();
-  const target = Number(document.getElementById("goalTarget").value);
-  const imageInput = document.getElementById("goalImage");
+function saveGoal(){
  
-  if (name === "" || !target || target <= 0) {
-    alert("Please enter a valid goal name and amount.");
-    return;
-  }
+    const name =
+        document.getElementById("goalName").value.trim();
  
-  if (imageInput.files.length > 0) {
-    const reader = new FileReader();
- 
-    reader.onload = function(e) {
-      goals[selectedIndex] = {
-        name,
-        target,
-        image: e.target.result
-      };
- 
-      localStorage.setItem("goals", JSON.stringify(goals));
-      closeGoalModal();
-      renderGoals();
-    };
- 
-    reader.readAsDataURL(imageInput.files[0]);
-  } else {
-    goals[selectedIndex] = {
-      name,
-      target,
-      image: goals[selectedIndex]?.image || ""
-    };
- 
-    localStorage.setItem("goals", JSON.stringify(goals));
-    closeGoalModal();
-    renderGoals();
-  }
-}
- 
-function completeGoal(index) {
-  const goal = goals[index];
- 
-  if (!goal) return;
- 
-  const target = Number(goal.target) || 0;
- 
-  let amountLeft = Number(localStorage.getItem("dashboardAmountLeft")) || 0;
-  let monthSaving = Number(localStorage.getItem("dashboardSavedAmount")) || 0;
-  let totalSavings = Number(localStorage.getItem("totalSavings")) || 0;
- 
-  if (totalSavings < target) {
-    alert("You do not have enough total savings to complete this goal.");
-    return;
-  }
- 
-  if (!confirm(`Complete "${goal.name}" and use ${yen(target)}?`)) {
-    return;
-  }
- 
-  let remaining = target;
- 
-  // 1. First deduct from Amount Left To Spend
-  if (amountLeft >= remaining) {
-    amountLeft -= remaining;
-    remaining = 0;
-  } else {
-    remaining -= amountLeft;
-    amountLeft = 0;
-  }
- 
-  // 2. Then deduct from This Month Savings
-  if (remaining > 0) {
-    if (monthSaving >= remaining) {
-      monthSaving -= remaining;
-      remaining = 0;
-    } else {
-      remaining -= monthSaving;
-      monthSaving = 0;
+    const target =
+        document.getElementById("goalTarget").value;
+       
+    const imageInput =
+        document.getElementById("goalImage");
+    if(name=="" || target<=0){
+        alert("Please enter a valid goal.");
+        return;
     }
-  }
- 
-  // 3. Also deduct from Total Savings shown in Profile
-  totalSavings -= target;
- 
-  if (totalSavings < 0) {
-    totalSavings = 0;
-  }
- 
-  saveDashboardMoney(amountLeft, monthSaving, totalSavings);
- 
-  const collection = getGoalCollection();
- 
-  collection.push({
-    ...goal,
-    usedAmount: target,
-    date: new Date().toLocaleDateString(),
-    time: new Date().toLocaleTimeString()
-  });
- 
-  localStorage.setItem("goalCollection", JSON.stringify(collection));
- 
-  goals[index] = null;
-  localStorage.setItem("goals", JSON.stringify(goals));
- 
-  renderGoals();
-  renderCollection();
- 
-  alert("🎉 Goal completed! Amount was deducted from Total Savings.");
+    function upload(image){
+        fetch("save_goal.php",{
+            method:"POST",
+            headers:{
+                "Content-Type":"application/x-www-form-urlencoded"
+            },
+            body:
+                "slot="+goals[selectedIndex].slot_no+
+                "&name="+encodeURIComponent(name)+
+                "&target="+target+
+                "&image="+encodeURIComponent(image)
+        })
+        .then(res=>res.text())
+        .then(data => {
+
+    console.log("Response =", data);
+
+    if(data.trim() === "success"){
+        alert("Goal saved!");
+        location.reload();
+    }else{
+        alert("Response: " + data);
+    }
+})
+.catch(err => {
+    console.error(err);
+    alert("Save failed.");
+});
+    }
+    if(imageInput.files.length>0){
+        const reader=new FileReader();
+        reader.onload=function(e){
+            upload(e.target.result);
+        };
+        reader.readAsDataURL(imageInput.files[0]);
+    }else{
+        upload(goals[selectedIndex].image || "");
+    }
 }
  
-function deleteGoal(index) {
-  if (!confirm("Delete this goal?")) {
-    return;
-  }
- 
-  goals[index] = null;
-  localStorage.setItem("goals", JSON.stringify(goals));
-  renderGoals();
+function saveGoalToDB(name,target,image){
+    fetch("save_goal.php",{
+        method:"POST",
+        headers:{
+            "Content-Type":"application/x-www-form-urlencoded"
+        },
+        body:
+            "slot="+goals[selectedIndex].slot_no+
+            "&name="+encodeURIComponent(name)+
+            "&target="+target+
+            "&image="+encodeURIComponent(image)
+    })
+    .then(res=>res.text())
+    .then(data=>{
+        if(data=="success"){
+            location.reload();
+        }else{
+            alert(data);
+        }
+    });
 }
  
-function deleteCollectionGoal(index) {
-  let collection = getGoalCollection();
+function completeGoal(index){
  
-  if (!confirm("Delete this completed goal?")) {
-    return;
-  }
+    if(!confirm("Complete this goal?")){
+        return;
+    }
+    fetch("complete_goal.php",{
+        method:"POST",
+        headers:{
+            "Content-Type":"application/x-www-form-urlencoded"
+        },
+        body:"slot="+goals[index].slot_no
+    })
  
-  collection.splice(index, 1);
-  localStorage.setItem("goalCollection", JSON.stringify(collection));
-  renderCollection();
+    .then(res => res.text())
+.then(data => {
+    console.log("Response =", data);
+
+    if (data.trim() === "success") {
+        alert("Goal completed!");
+        location.reload();
+    } else {
+        alert("Response: " + data);
+    }
+});
 }
  
-window.onclick = function(event) {
-  const modal = document.getElementById("goalModal");
  
-  if (event.target === modal) {
-    closeGoalModal();
-  }
+function deleteGoal(index){
+    if(!confirm("Delete this goal?")){
+        return;
+    }
+ 
+    fetch("delete_goal.php",{
+        method:"POST",
+        headers:{
+            "Content-Type":"application/x-www-form-urlencoded"
+        },
+        body:"slot="+goals[index].slot_no
+    })
+ 
+    .then(res => res.text())
+    .then(data => {
+
+        console.log("Response =", data);
+
+        if(data.trim() === "success"){
+            alert("Goal deleted!");
+            location.reload();
+        }else{
+            alert("Response: " + data);
+        }
+    })
+
+    .catch(err => {
+        console.error(err);
+        alert("Delete failed.");
+    });
+}
+ 
+function deleteCollectionGoal(id){
+    if(!confirm("Delete this completed goal?")){
+        return;
+    }
+    fetch("delete_collection.php",{
+        method:"POST",
+        headers:{
+            "Content-Type":"application/x-www-form-urlencoded"
+        },
+        body:"id="+id
+    })
+    .then(res=>res.text())
+    .then(data => {
+
+    console.log("Response =", data);
+
+    if(data.trim() === "success"){
+        alert("Deleted!");
+        location.reload();
+    }else{
+        alert("Response: " + data);
+    }
+})
+.catch(err => {
+    console.error(err);
+    alert("Delete failed.");
+});
 }
  
 renderGoals();
 renderCollection();
 </script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
  
 </body>
 </html>
- 

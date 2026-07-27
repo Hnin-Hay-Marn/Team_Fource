@@ -2,6 +2,36 @@
 require_once 'db.php';
 $pdo = getDb();
 
+// Emergency Budget
+$stmt = $pdo->prepare("
+    SELECT amount
+    FROM budgets
+    WHERE category='emergency'
+");
+$stmt->execute();
+
+$emergencyBudget = $stmt->fetchColumn();
+
+//save budget to database
+if (
+    $_SERVER['REQUEST_METHOD'] == 'POST' &&
+    ($_POST['action'] ?? '') == 'save_budget'
+) {
+
+    $budget = (int)$_POST['budget'];
+
+    $stmt = $pdo->prepare("
+        UPDATE budgets
+        SET amount=?
+        WHERE category='emergency'
+    ");
+
+    $stmt->execute([$budget]);
+
+    header("Location: emergency.php");
+    exit;
+}
+
 // ── Handle add/edit/delete (POST) ─────────────────────────────────────────────
 $action = $_POST['action'] ?? '';
 
@@ -110,22 +140,90 @@ function getCategoryLabel(array $categories, string $id): string {
 <title>Emergency</title>
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/emergency.css">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
  
 <body>
+  <!-- bootstrap--------nav bar---- -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top px-3">
+
+    <!-- Menu -->
+    <button class="btn btn-success"
+            type="button"
+            data-bs-toggle="offcanvas"
+            data-bs-target="#sidebarMenu">
+        ☰
+    </button>
+
+    <!-- Logo -->
+    <a class="navbar-brand ms-3 fw-bold" href="#">
+        <img src="img/logo.png" width="35" class="me-2">
+        Money Tracker
+    </a>
+
+    <!-- Right Side -->
+    <div class="ms-auto d-flex align-items-center gap-3">
+
+        <div id="google_translate_element"></div>
+
+        <button class="btn btn-outline-success"
+                onclick="goPage('profile.php')">
+            👤 Profile
+        </button>
+
+    </div>
+
+</nav>
+<!-- bootstrap--------nav bar end---- -->
+
 <div class="layout">
- 
-<!-- Sidebar -->
-<aside class="sidebar">
-  <h2><img src="img/logo.png" alt="Money Tracker" class="logo-img"> Money Tracker</h2>
-  <a href="dashboard.php">Dashboard</a>
-  <a href="goals.php">Savings Goals</a>
-  <a href="analytics.php">Analysis</a>
-  <a href="achievements.php">Achievements</a>
-</aside>
- 
-<div class="main">
- 
+  <!-- bootstrap--------sidebar---- -->
+  <div class="offcanvas offcanvas-start"
+     tabindex="-1"
+     id="sidebarMenu">
+
+  <div class="offcanvas-header">
+
+    <h5 class="offcanvas-title">
+      <img src="img/logo.png" alt="Money Tracker" class="logo-img"> Money Tracker
+    </h5>
+
+    <button type="button"
+            class="btn-close"
+            data-bs-dismiss="offcanvas">
+    </button>
+
+  </div>
+  <!-- topbar end -->
+
+  <div class="offcanvas-body">
+
+      <a href="dashboard.php" class="btn btn-outline-success w-100 mb-3">
+          🏠 Dashboard
+      </a>
+
+      <a href="goals.php" class="btn btn-outline-success w-100 mb-3">
+          🎯 Savings Goals
+      </a>
+
+      <a href="analytics.php" class="btn btn-outline-success w-100 mb-3">
+          📊 Analytics
+      </a>
+
+      <a href="achievements.php" class="btn btn-outline-success w-100">
+          🏆 Achievements
+      </a>
+
+  </div>
+
+</div>
+<!-- bootstrap--------sidebar end---- -->
+
+<div class="main container-fluid mt-4">
+
+ <?php if ($message): ?>
+<div class="toast"><?= $message ?></div>
+<?php endif; ?>
  
 <!-- HEADER -->
 <div class="page-header">
@@ -207,69 +305,155 @@ function getCategoryLabel(array $categories, string $id): string {
      MONTHLY BUDGET MODAL
 ══════════════════════════════════════════════════════════════════════════ -->
 <div id="budget-overlay" class="modal-overlay">
-  <div class="modal" id="budget-modal" onclick="event.stopPropagation()">
+  <div class="custom-modal" onclick="event.stopPropagation()">
+
     <h2>Set Monthly Budget</h2>
-    <p style="color: #666; margin-bottom: 20px;">Define your total monthly budget for emergency</p>
-   
-    <label>Monthly Budget (¥)
-      <input type="number" id="budget-input" placeholder="50000" min="1" step="1000" required>
-    </label>
-   
-    <div class="modal-actions">
-      <button type="button" class="btn-cancel" onclick="closeBudgetModal()">Cancel</button>
-      <button type="button" class="btn-save" onclick="saveBudget()">Save Budget</button>
-    </div>
+
+    <p style="color:#666;margin-bottom:20px;">
+        Define your total monthly budget for emergency
+    </p>
+
+    <form method="POST" action="emergency.php">
+
+        <input
+            type="hidden"
+            name="action"
+            value="save_budget">
+
+        <label>
+            Monthly Budget (¥)
+
+            <input
+                type="number"
+                id="budget-input"
+                name="budget"
+                value="<?= $emergencyBudget ?>"
+                required>
+        </label>
+
+        <div class="modal-actions">
+
+            <button
+                type="button"
+                class="btn-cancel"
+                onclick="closeBudgetModal()">
+                Cancel
+            </button>
+
+            <button
+                type="submit"
+                class="btn-save">
+                Save
+            </button>
+
+        </div>
+
+    </form>
+
   </div>
 </div>
  
-<!-- ══════════════════════════════════════════════════════════════════════════
+ <!-- ══════════════════════════════════════════════════════════════════════════
      ADD / EDIT MODAL
 ══════════════════════════════════════════════════════════════════════════ -->
 <div id="modal-overlay" class="modal-overlay">
-  <div class="modal" id="modal-box" onclick="event.stopPropagation()">
+  <div class="custom-modal" id="modal-box" onclick="event.stopPropagation()">
+
     <h2 id="modal-title">Add Expense</h2>
- 
+
     <form method="POST" action="emergency.php">
-      <input type="hidden" name="action" id="form-action" value="add">
-      <input type="hidden" name="id"     id="form-id"     value="">
- 
-      <label>Name
-        <input type="text" name="name" id="form-name" placeholder="e.g. Hospital visit" required>
+
+      <input
+        type="hidden"
+        name="action"
+        id="form-action"
+        value="add">
+
+      <input
+        type="hidden"
+        name="id"
+        id="form-id"
+        value="">
+
+      <label>
+        Name
+        <input
+          type="text"
+          name="name"
+          id="form-name"
+          placeholder="e.g. Hospital visit"
+          required>
       </label>
- 
-      <label>Category
-        <select name="category" id="form-category" required>
-          <option value="">— select —</option>
+
+      <label>
+        Category
+        <select
+          name="category"
+          id="form-category"
+          required>
+
+          <option value="">— Select —</option>
+
           <?php foreach ($categories as $cat): ?>
-            <option value="<?= $cat['id'] ?>"><?= $cat['icon'] ?> <?= htmlspecialchars($cat['label']) ?></option>
+            <option value="<?= $cat['id'] ?>">
+              <?= $cat['icon'] ?>
+              <?= htmlspecialchars($cat['label']) ?>
+            </option>
           <?php endforeach; ?>
+
         </select>
       </label>
- 
-      <label>Date
-        <input type="date" name="date" id="form-date"
-               value="<?= date('Y-m-d') ?>" required>
+
+      <label>
+        Date
+        <input
+          type="date"
+          name="date"
+          id="form-date"
+          value="<?= date('Y-m-d') ?>"
+          required>
       </label>
- 
-      <label>Amount (¥)
-        <input type="number" name="amount" id="form-amount"
-               placeholder="0" min="0" step="0.01" required>
+
+      <label>
+        Amount (¥)
+        <input
+          type="number"
+          name="amount"
+          id="form-amount"
+          placeholder="0"
+          min="0"
+          step="1"
+          required>
       </label>
- 
+
       <div class="modal-actions">
-        <button type="button" class="btn-cancel" onclick="closeAddModal()">Cancel</button>
-        <button type="submit" class="btn-save">Save</button>
+
+        <button
+          type="button"
+          class="btn-cancel"
+          onclick="closeAddModal()">
+          Cancel
+        </button>
+
+        <button
+          type="submit"
+          class="btn-save">
+          Save
+        </button>
+
       </div>
+
     </form>
+
   </div>
 </div>
- 
+    
  
 <!-- ══════════════════════════════════════════════════════════════════════════
      DELETE CONFIRM MODAL
 ══════════════════════════════════════════════════════════════════════════ -->
 <div id="del-overlay" class="modal-overlay">
-  <div class="modal modal-sm" onclick="event.stopPropagation()">
+  <div class="custom-modal modal-sm" onclick="event.stopPropagation()">
     <h2>Delete Expense?</h2>
     <p>This action cannot be undone.</p>
     <form method="POST" action="emergency.php">
@@ -306,8 +490,8 @@ budgetOverlay.addEventListener('click', function(e) {
  
 // ── Budget modal ─────────────────────────────────────────────────────────────
 function openBudgetModal() {
-  const saved = localStorage.getItem('emergencyBudget');
-  document.getElementById('budget-input').value = saved || '50000';
+  // const saved = localStorage.getItem('emergencyBudget');
+  // document.getElementById('budget-input').value = saved || '50000';
   budgetOverlay.style.display = 'flex';
 }
  
@@ -315,16 +499,16 @@ function closeBudgetModal() {
   budgetOverlay.style.display = 'none';
 }
  
-function saveBudget() {
-  const budget = document.getElementById('budget-input').value;
-  if (!budget || budget <= 0) {
-    alert('Please enter a valid budget amount');
-    return;
-  }
-  localStorage.setItem('emergencyBudget', budget);
-  alert('✅ Budget saved: ¥' + Number(budget).toLocaleString());
-  closeBudgetModal();
-}
+// function saveBudget() {
+//   const budget = document.getElementById('budget-input').value;
+//   if (!budget || budget <= 0) {
+//     alert('Please enter a valid budget amount');
+//     return;
+//   }
+//   localStorage.setItem('emergencyBudget', budget);
+//   alert('✅ Budget saved: ¥' + Number(budget).toLocaleString());
+//   closeBudgetModal();
+// }
  
 // ── Add modal ─────────────────────────────────────────────────────────────────
 function openModal() {
@@ -405,6 +589,8 @@ localStorage.setItem(
 );
 //total emergency budget end
 </script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
  
 </body>
 </html>
